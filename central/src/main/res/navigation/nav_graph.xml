@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/DevicesFragment">
+
+    <fragment
+        android:id="@+id/DevicesFragment"
+        android:name="ble.playground.central.ui.devices.DevicesFragment"
+        tools:layout="@layout/fragment_devices">
+
+        <action
+            android:id="@+id/action_devices_device_selected"
+            app:destination="@id/DeviceDetailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/DeviceDetailsFragment"
+        android:name="ble.playground.central.ui.devicedetails.DeviceDetailsFragment"
+        tools:layout="@layout/fragment_device_details">
+
+        <argument
+            android:name="deviceMacAddress"
+            android:defaultValue=""
+            app:argType="string" />
+    </fragment>
+</navigation>

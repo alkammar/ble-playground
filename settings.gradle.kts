@@ -13,4 +13,6 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "BlePlayground"
-include(":app")
+include(":central")
+include(":perpheral")
+include(":common")
