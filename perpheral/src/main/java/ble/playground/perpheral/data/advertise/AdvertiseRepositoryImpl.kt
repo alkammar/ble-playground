@@ -12,6 +12,10 @@ class AdvertiseRepositoryImpl(
         blePeripheral.startAdvertising()
     }
 
+    override suspend fun stopAdvertising() {
+        blePeripheral.stopAdvertising()
+    }
+
     override fun updateData(data: String) {
         blePeripheral.updateData(data)
     }

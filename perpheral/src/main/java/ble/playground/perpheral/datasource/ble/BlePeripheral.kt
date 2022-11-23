@@ -16,7 +16,9 @@ import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.perpheral.entity.Advertiser
 import ble.playground.perpheral.entity.AdvertisingState.Advertising
 import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import java.nio.charset.Charset
 import java.util.*
 
@@ -40,13 +42,29 @@ class BlePeripheral(
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
     }
 
+    init {
+        GlobalScope.launch {
+            advertiserFlow.emit(Advertiser(NotAdvertising))
+        }
+    }
+
     suspend fun startAdvertising() {
         if (!isBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
-            advertiserFlow.emit(Advertiser(NotAdvertising))
             startAdvertisingInternal()
             advertiserFlow.emit(Advertiser(Advertising))
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun stopAdvertising() {
+        if (!isBluetoothPermissionGranted()) {
+            throw BluetoothPermissionNotGrantedException()
+        } else {
+            bluetoothManager.adapter.bluetoothLeAdvertiser.stopAdvertising(advertisingCallback)
+            advertiserFlow.emit(Advertiser(NotAdvertising))
+            println("kammer ??? Not advertising")
         }
     }
 
@@ -144,7 +162,6 @@ class BlePeripheral(
                 GATT_SUCCESS,
                 0,
                 data.toByteArray(Charset.forName("UTF-8"))
-//                byteArrayOf()
             ).also {
                 if (it) {
                     println("kammer ??? response ${"77"} sent to ${device?.address}")

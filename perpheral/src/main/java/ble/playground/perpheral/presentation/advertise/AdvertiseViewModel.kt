@@ -36,11 +36,11 @@ class AdvertiseViewModel @Inject constructor(
         }
     }
 
-    fun onAdvertiseAction(progress: Int) {
+    fun onStartAdvertiseAction() {
         executeStartAdvertising()
     }
 
-    fun onLocationPermissionGranted(progress: Int) {
+    fun onLocationPermissionGranted() {
         executeStartAdvertising()
     }
 
@@ -73,6 +73,12 @@ class AdvertiseViewModel @Inject constructor(
             } catch (e: BluetoothPermissionNotGrantedException) {
                 notification.value = RequestBluetoothPermission
             }
+        }
+    }
+
+    fun onStopAdvertiseAction() {
+        viewModelScope.launch {
+            advertiseRepository.stopAdvertising()
         }
     }
 

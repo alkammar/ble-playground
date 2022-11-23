@@ -12,8 +12,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import ble.playground.perpheral.R
+import ble.playground.perpheral.entity.Advertiser
 import ble.playground.perpheral.entity.AdvertisingState.Advertising
 import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
+import ble.playground.perpheral.entity.ConnectionState
 import ble.playground.perpheral.presentation.advertise.AdvertiseCommand
 import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
 import ble.playground.perpheral.presentation.advertise.AdvertiseViewModel
@@ -27,6 +29,8 @@ class AdvertiseFragment : Fragment() {
     private val advertise: Button get() = requireView().findViewById(R.id.advertise_button)
 
     private val viewModel: AdvertiseViewModel by viewModels()
+
+    private var advertiser: Advertiser? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,7 +51,8 @@ class AdvertiseFragment : Fragment() {
 
         viewModel.advertiser.observe(viewLifecycleOwner) { state ->
             state.data?.let { advertiser ->
-                advertise.text = when(advertiser.advertisingState) {
+                this.advertiser = advertiser
+                advertise.text = when (advertiser.advertisingState) {
                     NotAdvertising -> getString(R.string.advertise_not_advertising_button_label)
                     Advertising -> getString(R.string.advertise_advertising_button_label)
                 }
@@ -88,7 +93,13 @@ class AdvertiseFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
         })
         advertise.setOnClickListener {
-            viewModel.onAdvertiseAction(76)
+            advertiser?.let {
+                if (it.advertisingState is NotAdvertising) {
+                    viewModel.onStartAdvertiseAction()
+                } else if (it.advertisingState is Advertising) {
+                    viewModel.onStopAdvertiseAction()
+                }
+            }
         }
     }
 
@@ -96,7 +107,7 @@ class AdvertiseFragment : Fragment() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissionsMap ->
         if (permissionsMap.all { it.value }) {
-            viewModel.onLocationPermissionGranted(seekbar.progress)
+            viewModel.onLocationPermissionGranted()
         } else {
             viewModel.onLocationPermissionDenied()
         }
