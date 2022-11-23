@@ -23,6 +23,7 @@ class DeviceDetailsFragment : Fragment() {
 
     private val macAddress: TextView get() = requireView().findViewById(R.id.device_details_mac_address)
     private val connectionState: TextView get() = requireView().findViewById(R.id.device_details_connection_state)
+    private val value: TextView get() = requireView().findViewById(R.id.device_details_value)
     private val connect: Button get() = requireView().findViewById(R.id.device_details_connect_button)
 
     private var device: Device? = null
@@ -54,7 +55,7 @@ class DeviceDetailsFragment : Fragment() {
                     Disconnecting -> "disconnecting ..."
                     NotConnected -> "not connected"
                 }
-
+                value.text = "--"
                 connect.updateState(device)
             }
         }

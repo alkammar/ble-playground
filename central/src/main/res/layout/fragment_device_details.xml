@@ -24,6 +24,17 @@
         app:layout_constraintTop_toBottomOf="@id/device_details_mac_address"
         tools:text="Connecting ... " />
 
+    <TextView
+        android:id="@+id/device_details_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="96sp"
+        app:layout_constraintBottom_toTopOf="@id/device_details_connect_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="47" />
+
     <Button
         android:id="@+id/device_details_connect_button"
         android:layout_width="match_parent"
