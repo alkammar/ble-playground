@@ -4,11 +4,6 @@ import android.Manifest.permission.*
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
-import android.bluetooth.BluetoothGatt.GATT_SUCCESS
-import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ
-import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE
-import android.bluetooth.BluetoothProfile.STATE_CONNECTED
-import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -30,16 +25,10 @@ import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.common.data.DeviceNotFoundException
 import ble.playground.common.data.LocationPermissionNotGrantedException
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.*
-
-
-private const val SERVICE_UUID = "00001805-0000-1000-8000-00805f9b34fb"
-private const val VALUE_UUID = "00002a2b-0000-1000-8000-00805f9b34fb"
-private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
 
 private const val SCANNING_PERIOD = 60_000L
 
@@ -104,7 +93,7 @@ class BleCentral(
 
     private fun buildScanFilter() = listOf(
         ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid(UUID.fromString(SERVICE_UUID)))
+            .setServiceUuid(ParcelUuid(UUID.fromString(ServiceProfile.BLE_SERVICE_UUID)))
             .build()
     )
 
@@ -137,10 +126,12 @@ class BleCentral(
 
         override fun onScanFailed(errorCode: Int) {
             runBlocking {
-                println("kammer error $errorCode")
-                if (errorCode != SCAN_FAILED_ALREADY_STARTED) {
+                if (errorCode == SCAN_FAILED_ALREADY_STARTED) {
+                    Log.w(LOG_TAG, "Scanning already in progress")
+                } else {
                     timerJob?.cancel()
                     scannerFlow.emit(Scanner(NotScanning))
+                    Log.e(LOG_TAG, "Error scanning $errorCode")
                 }
             }
         }
@@ -164,160 +155,12 @@ class BleCentral(
     private fun connectGatt(bleDevice: BleDevice) =
         bluetoothAdapter
             .getRemoteDevice(bleDevice.macAddress)
-            .connectGatt(context, false, object : BluetoothGattCallback() {
-                @SuppressLint("MissingPermission")
-                override fun onConnectionStateChange(
-                    gatt: BluetoothGatt?,
-                    status: Int,
-                    newState: Int
-                ) {
-                    if (status == GATT_SUCCESS) {
-                        if (newState == STATE_CONNECTED) {
-                            println("kammer ??? connected to ${gatt?.device?.address}")
-                            println("kammer ??? connected to ${gatt?.device?.name}")
-
-                            runBlocking {
-                                devicesFlow.updateAndEmit(bleDevice.copy(connectionState = Connected))
-                            }
-                            gatt?.discoverServices()
-                        } else if (newState == STATE_DISCONNECTED) {
-                            println("kammer ??? disconnected from ${gatt?.device?.address}")
-                            runBlocking {
-                                devicesFlow.updateAndEmit(bleDevice.copy(connectionState = NotConnected))
-                            }
-                            gatt?.close()
-                        }
-                    } else {
-                        gatt?.close()
-                    }
-                }
-
-                override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-                    println("kammer ??? onServicesDiscovered")
-                    if (status == GATT_SUCCESS) {
-                        gatt?.getService(UUID.fromString(SERVICE_UUID))
-                            ?.getCharacteristic(UUID.fromString(VALUE_UUID))?.let {
-                                println("kammer ??? characteristic ${it.uuid} from ${bleDevice.macAddress}")
-                                requestNotification(gatt, it)
-//                                if (!readCharacteristic(gatt, it)) {
-//                                    Log.w(LOG_TAG, "Unable to read characteristic ${it.uuid}")
-//                                }
-                            }
-                    } else {
-                        gatt?.disconnect()
-                        println("kammer ??? no gatt from ${gatt?.device?.address}")
-                    }
-                }
-
-                override fun onCharacteristicChanged(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?
-                ) {
-                    runBlocking {
-                        characteristic?.let { characteristic ->
-                            characteristic.value?.let { value ->
-                                sensorsFlow.updateAndEmit(
-                                    Sensor.Available(
-                                        characteristic.uuid.toString(),
-                                        String(value)
-                                    )
-                                )
-                            } ?: sensorsFlow.updateAndEmit(
-                                Sensor.NotAvailable(
-                                    characteristic.uuid.toString()
-                                )
-                            )
-                        }
-                    }
-                }
-
-                override fun onCharacteristicChanged(
-                    gatt: BluetoothGatt,
-                    characteristic: BluetoothGattCharacteristic,
-                    value: ByteArray
-                ) {
-                    runBlocking {
-                        sensorsFlow.updateAndEmit(
-                            Sensor.Available(
-                                characteristic.uuid.toString(),
-                                String(value)
-                            )
-                        )
-                    }
-                }
-
-                @Deprecated("Deprecated in Java")
-                override fun onCharacteristicRead(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?,
-                    status: Int
-                ) {
-                    runBlocking {
-                        characteristic?.let { characteristic ->
-                            characteristic.value?.let { value ->
-                                sensorsFlow.updateAndEmit(
-                                    Sensor.Available(
-                                        characteristic.uuid.toString(),
-                                        String(value)
-                                    )
-                                )
-                            } ?: sensorsFlow.updateAndEmit(
-                                Sensor.NotAvailable(
-                                    characteristic.uuid.toString()
-                                )
-                            )
-                        }
-                    }
-                }
-
-                override fun onCharacteristicRead(
-                    gatt: BluetoothGatt,
-                    characteristic: BluetoothGattCharacteristic,
-                    value: ByteArray,
-                    status: Int
-                ) {
-                    runBlocking {
-                        sensorsFlow.updateAndEmit(
-                            Sensor.Available(
-                                characteristic.uuid.toString(),
-                                String(value)
-                            )
-                        )
-                    }
-                }
-            }, TRANSPORT_LE)
-
-    @SuppressLint("MissingPermission")
-    private fun requestNotification(
-        gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic
-    ) {
-        val descriptor: BluetoothGattDescriptor =
-            characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
-        if (gatt.setCharacteristicNotification(characteristic, true)) {
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            if (!gatt.writeDescriptor(descriptor)) {
-                Log.e(
-                    LOG_TAG,
-                    "Failed to write characteristic to enable notification ${characteristic.uuid}"
-                )
-            }
-        } else {
-            Log.e(LOG_TAG, "Failed to request characteristic notification ${characteristic.uuid}")
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun readCharacteristic(
-        bluetoothGatt: BluetoothGatt,
-        characteristic: BluetoothGattCharacteristic?
-    ) =
-        characteristic?.let {
-            if (it.isReadable()) {
-                bluetoothGatt.readCharacteristic(characteristic)
-            } else {
-                false
-            }
-        } ?: false
+            .connectGatt(
+                context,
+                false,
+                BleGattCallback(bleDevice, devicesFlow, sensorsFlow),
+                TRANSPORT_LE
+            )
 
     @SuppressLint("MissingPermission")
     suspend fun disconnect(macAddress: String) {
@@ -340,49 +183,4 @@ class BleCentral(
         } else {
             checkSelfPermission(context, BLUETOOTH_ADMIN) == PERMISSION_GRANTED
         }
-
-    private suspend fun Flow<Set<BleDevice>>.addAndEmit(bleDevice: BleDevice) {
-        with(first().toMutableSet()) {
-            add(bleDevice)
-            devicesFlow.emit(this)
-        }
-    }
-
-    private suspend fun Flow<Set<BleDevice>>.removeAndEmit(bleDevice: BleDevice) {
-        with(first().toMutableSet()) {
-            removeIf { it.macAddress == bleDevice.macAddress }
-            devicesFlow.emit(this)
-        }
-    }
-
-    private suspend fun Flow<Set<BleDevice>>.updateAndEmit(bleDevice: BleDevice) {
-        with(first().toMutableSet()) {
-            replace(bleDevice)
-            devicesFlow.emit(this)
-        }
-    }
-
-    private suspend fun Flow<Set<Sensor>>.updateAndEmit(sensor: Sensor) {
-        with(first().toMutableSet()) {
-            replace(sensor)
-            sensorsFlow.emit(this)
-        }
-    }
-
-    private fun MutableSet<BleDevice>.replace(bleDevice: BleDevice) {
-        removeIf { it.macAddress == bleDevice.macAddress }
-        add(bleDevice)
-    }
-
-    private fun MutableSet<Sensor>.replace(sensor: Sensor) {
-        removeIf { it.id == sensor.id }
-        add(sensor)
-    }
-
-    private fun BluetoothGattCharacteristic.isReadable(): Boolean = containsProperty(PROPERTY_READ)
-
-    private fun BluetoothGattCharacteristic.isWritable(): Boolean = containsProperty(PROPERTY_WRITE)
-
-    private fun BluetoothGattCharacteristic.containsProperty(property: Int) =
-        properties and property != 0
 }
