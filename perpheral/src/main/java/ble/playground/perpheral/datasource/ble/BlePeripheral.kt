@@ -3,18 +3,23 @@ package ble.playground.perpheral.datasource.ble
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
 import android.bluetooth.*
+import android.bluetooth.BluetoothGatt.GATT_FAILURE
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic.*
+import android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
+import android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import android.os.ParcelUuid
+import android.util.Log
 import androidx.core.app.ActivityCompat.checkSelfPermission
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_CHARACTERISTIC_UUID
 import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_SERVICE_UUID
+import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.CLIENT_CONFIG
 import ble.playground.perpheral.entity.Advertiser
 import ble.playground.perpheral.entity.AdvertisingState.Advertising
 import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
@@ -24,6 +29,8 @@ import kotlinx.coroutines.launch
 import java.nio.charset.Charset
 import java.util.*
 
+private const val LOG_TAG = "BLE Playground"
+
 class BlePeripheral(
     private val context: Context
 ) {
@@ -31,7 +38,7 @@ class BlePeripheral(
     private var data: String = "22"
     private var gattServerCallback: GattServerCallback? = null
     private var gattServer: BluetoothGattServer? = null
-    private val connectedDevices = mutableMapOf<String, BluetoothDevice>()
+    private val subscribedDevices = mutableMapOf<String, BluetoothDevice>()
 
     private val advertiserFlow = MutableSharedFlow<Advertiser>(replay = 1)
 
@@ -113,10 +120,9 @@ class BlePeripheral(
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
             if (status == GATT_SUCCESS && newState == STATE_CONNECTED) {
-                connectedDevices[device.address] = device
                 println("kammer ??? connected to ${device.address}")
             } else {
-                connectedDevices.remove(device.address)
+                subscribedDevices.remove(device.address)
                 println("kammer ??? disconnected from ${device.address}")
             }
         }
@@ -157,16 +163,74 @@ class BlePeripheral(
             println("kammer ??? onCharacteristicWriteRequest from ${device?.address} characteristic ${characteristic?.uuid}")
         }
 
+        @SuppressLint("MissingPermission")
         override fun onDescriptorWriteRequest(
-            device: BluetoothDevice?,
-            requestId: Int,
-            descriptor: BluetoothGattDescriptor?,
-            preparedWrite: Boolean,
-            responseNeeded: Boolean,
-            offset: Int,
-            value: ByteArray?
+            device: BluetoothDevice, requestId: Int,
+            descriptor: BluetoothGattDescriptor,
+            preparedWrite: Boolean, responseNeeded: Boolean,
+            offset: Int, value: ByteArray
         ) {
-            println("kammer ??? onCharacteristicWriteRequest from ${device?.address} characteristic ${descriptor?.uuid}")
+            if (CLIENT_CONFIG == descriptor.uuid) {
+                if (Arrays.equals(ENABLE_NOTIFICATION_VALUE, value)) {
+                    Log.d(LOG_TAG, "Subscribe device to notifications: $device")
+                    subscribedDevices[device.address] = device
+                } else if (Arrays.equals(DISABLE_NOTIFICATION_VALUE, value)) {
+                    Log.d(LOG_TAG, "Unsubscribe device from notifications: $device")
+                    subscribedDevices.remove(device.address)
+                }
+
+                if (responseNeeded) {
+                    gattServer?.sendResponse(
+                        device,
+                        requestId,
+                        GATT_SUCCESS,
+                        0,
+                        null
+                    )
+                }
+            } else {
+                Log.w(LOG_TAG, "Unknown descriptor write request")
+                if (responseNeeded) {
+                    gattServer?.sendResponse(
+                        device,
+                        requestId,
+                        GATT_FAILURE,
+                        0,
+                        null
+                    )
+                }
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        override fun onDescriptorReadRequest(
+            device: BluetoothDevice, requestId: Int, offset: Int,
+            descriptor: BluetoothGattDescriptor
+        ) {
+            if (CLIENT_CONFIG == descriptor.uuid) {
+                Log.d(LOG_TAG, "Config descriptor read")
+                val returnValue = if (subscribedDevices.contains(device.address)) {
+                    ENABLE_NOTIFICATION_VALUE
+                } else {
+                    DISABLE_NOTIFICATION_VALUE
+                }
+                gattServer?.sendResponse(
+                    device,
+                    requestId,
+                    GATT_SUCCESS,
+                    0,
+                    returnValue
+                )
+            } else {
+                Log.w(LOG_TAG, "Unknown descriptor read request")
+                gattServer?.sendResponse(
+                    device,
+                    requestId,
+                    GATT_FAILURE,
+                    0,
+                    null
+                )
+            }
         }
     }
 
@@ -179,7 +243,7 @@ class BlePeripheral(
             ?.getCharacteristic(BLE_CHARACTERISTIC_UUID)
         characteristic?.value = data.toByteArray(Charset.forName("UTF-8"))
 
-        connectedDevices.forEach {
+        subscribedDevices.forEach {
             gattServer?.notifyCharacteristicChanged(
                 it.value,
                 characteristic,
