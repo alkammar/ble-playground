@@ -6,6 +6,7 @@ import android.bluetooth.*
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ
+import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.le.ScanCallback
@@ -16,6 +17,7 @@ import android.content.Context
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import android.os.ParcelUuid
+import android.util.Log
 import androidx.core.app.ActivityCompat.checkSelfPermission
 import ble.playground.central.data.device.model.BleDevice
 import ble.playground.central.entity.ConnectionState.*
@@ -39,6 +41,7 @@ private const val VALUE_UUID = "00002a2b-0000-1000-8000-00805f9b34fb"
 private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
 
 private const val SCANNING_PERIOD = 60_000L
+private const val TAG = "BLE Playground"
 
 class BleCentral(
     private val context: Context
@@ -189,28 +192,24 @@ class BleCentral(
                         gatt?.getService(UUID.fromString(SERVICE_UUID))
                             ?.getCharacteristic(UUID.fromString(VALUE_UUID))?.let {
                                 println("kammer ??? characteristic ${it.uuid} from ${bleDevice.macAddress}")
-                                val descriptor: BluetoothGattDescriptor = it.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
-                                if (gatt.setCharacteristicNotification(it, true)) {
-                                    println("kammer ??? notification set ${it.uuid}")
-                                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                                    if (gatt.writeDescriptor(descriptor)) {
-                                        println("kammer ??? descriptor written ${it.uuid}")
-                                    } else {
-                                        println("kammer ??? descriptor NOT written ${it.uuid}")
-                                    }
-                                } else {
-                                    println("kammer ??? notification NOT set ${it.uuid}")
+                                requestNotification(gatt, it)
+                                if (!readCharacteristic(gatt, it)) {
+                                    Log.w(TAG, "Unable to read characteristic ${it.uuid}")
                                 }
-//                                readCharacteristic(gatt, it).also {
-//                                    if (it) {
-//                                        println("kammer ??? read request sent successfully to ${bleDevice.macAddress}")
-//                                    }
-//                                }
-                        }
+                            }
                     } else {
                         gatt?.disconnect()
                         println("kammer ??? no gatt from ${gatt?.device?.address}")
                     }
+                }
+
+                override fun onCharacteristicRead(
+                    gatt: BluetoothGatt?,
+                    characteristic: BluetoothGattCharacteristic?,
+                    status: Int
+                ) {
+                    println("kammer ??? characteristic ${characteristic?.uuid} " +
+                            "value ${characteristic?.value?.let { String(it) }}")
                 }
 
                 override fun onCharacteristicRead(
@@ -219,29 +218,38 @@ class BleCentral(
                     value: ByteArray,
                     status: Int
                 ) {
-                    println("kammer ??? characteristic ${characteristic.uuid} value ${value}")
+                    println("kammer ??? characteristic ${characteristic.uuid} value ${String(value)}")
                 }
             }, TRANSPORT_LE)
 
     @SuppressLint("MissingPermission")
-    fun readCharacteristic(bluetoothGatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic?): Boolean {
-//        if (bluetoothGatt == null) {
-//            return false
-//        }
-
-        // Check if characteristic is valid
-        if (characteristic == null) {
-            return false
+    private fun requestNotification(
+        gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic
+    ) {
+        val descriptor: BluetoothGattDescriptor =
+            characteristic.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
+        if (gatt.setCharacteristicNotification(characteristic, true)) {
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if (!gatt.writeDescriptor(descriptor)) {
+                Log.e(TAG, "Failed to write characteristic to enable notification ${characteristic.uuid}")
+            }
+        } else {
+            Log.e(TAG, "Failed to request characteristic notification ${characteristic.uuid}")
         }
-
-        // Check if this characteristic actually has READ property
-        if (characteristic.properties and PROPERTY_READ == 0) {
-            return false
-        }
-
-        println("kammer ??? reading characteristic")
-        return bluetoothGatt.readCharacteristic(characteristic)
     }
+
+    @SuppressLint("MissingPermission")
+    private fun readCharacteristic(
+        bluetoothGatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic?
+    ) =
+        characteristic?.let {
+            if (it.isReadable()) {
+                bluetoothGatt.readCharacteristic(characteristic)
+            } else {
+                false
+            }
+        } ?: false
 
     @SuppressLint("MissingPermission")
     suspend fun disconnect(macAddress: String) {
@@ -290,4 +298,11 @@ class BleCentral(
         removeIf { it.macAddress == bleDevice.macAddress }
         add(bleDevice)
     }
+
+    private fun BluetoothGattCharacteristic.isReadable(): Boolean = containsProperty(PROPERTY_READ)
+
+    private fun BluetoothGattCharacteristic.isWritable(): Boolean = containsProperty(PROPERTY_WRITE)
+
+    private fun BluetoothGattCharacteristic.containsProperty(property: Int) =
+        properties and property != 0
 }
