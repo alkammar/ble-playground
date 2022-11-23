@@ -23,11 +23,16 @@ import java.nio.charset.Charset
 import java.util.*
 
 private const val SERVICE_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456a"
-private const val VALUE_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456b"
+private const val CHARACTERISTIC_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456b"
 
 class BlePeripheral(
     private val context: Context
 ) {
+    private val dataCharacteristic = BluetoothGattCharacteristic(
+        UUID.fromString(CHARACTERISTIC_UUID),
+        PROPERTY_READ,
+        PERMISSION_READ
+    )
 
     private var data: String = "22"
     private lateinit var gattServerCallback: GattServerCallback
@@ -119,25 +124,18 @@ class BlePeripheral(
             BluetoothGattService.SERVICE_TYPE_PRIMARY
         )
 
-        val messageCharacteristic = BluetoothGattCharacteristic(
-            UUID.fromString(VALUE_UUID),
-            PROPERTY_NOTIFY,
-            PERMISSION_READ
-        )
-        service.addCharacteristic(messageCharacteristic)
+        service.addCharacteristic(dataCharacteristic)
         return service
     }
 
     private inner class GattServerCallback : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
-            val isSuccess = status == GATT_SUCCESS
-            val isConnected = newState == STATE_CONNECTED
-            if (isSuccess && isConnected) {
+            if (status == GATT_SUCCESS && newState == STATE_CONNECTED) {
                 bluetoothDevice = device
-//                setCurrentChatConnection(device)
+                println("kammer ??? connected to ${device.address}")
             } else {
-//                _deviceConnection.postValue(DeviceConnectionState.Disconnected)
+                println("kammer ??? disconnected from ${device.address}")
             }
         }
 
@@ -194,10 +192,17 @@ class BlePeripheral(
         }
     }
 
+    @SuppressLint("MissingPermission")
     fun updateData(data: String) {
         println("kammer ??? updateData $data")
         this.data = data
-//        gattServer.notifyCharacteristicChanged(bluetoothDevice)
+        gattServer.notifyCharacteristicChanged(
+            bluetoothDevice,
+            dataCharacteristic.apply {
+                data.toByteArray(Charset.forName("UTF-8"))
+            },
+            false
+        )
     }
 
     private fun isBluetoothPermissionGranted() =
