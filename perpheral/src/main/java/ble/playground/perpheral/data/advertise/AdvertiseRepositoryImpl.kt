@@ -6,7 +6,9 @@ class AdvertiseRepositoryImpl(
     private val blePeripheral: BlePeripheral
 ) : AdvertiseRepository {
 
-    override fun startAdvertising(data: String) {
+    override fun data() = blePeripheral.advertiserFlow()
+
+    override suspend fun startAdvertising(data: String) {
         blePeripheral.startAdvertising(data)
     }
 }

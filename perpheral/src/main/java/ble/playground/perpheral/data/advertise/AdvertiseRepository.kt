@@ -1,5 +1,9 @@
 package ble.playground.perpheral.data.advertise
 
+import ble.playground.perpheral.entity.Advertiser
+import kotlinx.coroutines.flow.Flow
+
 interface AdvertiseRepository {
-    fun startAdvertising(data: String)
+    fun data(): Flow<Advertiser>
+    suspend fun startAdvertising(data: String)
 }

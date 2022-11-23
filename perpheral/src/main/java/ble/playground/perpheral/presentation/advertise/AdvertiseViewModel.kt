@@ -1,11 +1,15 @@
 package ble.playground.perpheral.presentation.advertise
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.common.data.LocationPermissionNotGrantedException
 import ble.playground.common.presentation.SingleLiveEvent
+import ble.playground.common.presentation.State
 import ble.playground.perpheral.data.advertise.AdvertiseRepository
+import ble.playground.perpheral.entity.Advertiser
 import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
 import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestLocationPermission
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,22 +18,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AdvertiseViewModel @Inject constructor(
-    private val repository: AdvertiseRepository
+    private val advertiseRepository: AdvertiseRepository
 ) : ViewModel() {
 
-//    val devices: LiveData<State<List<Device>>> get() = _devices
-//    private val _devices = MutableLiveData<State<List<Device>>>()
+    val advertiser: LiveData<State<Advertiser>> get() = _advertiser
+    private val _advertiser = MutableLiveData<State<Advertiser>>()
 
     val notification = SingleLiveEvent<AdvertiseCommand>()
 
     init {
-//        _devices.value = State.empty()
-//
-//        viewModelScope.launch {
-//            repository.data().collect {
-//                _devices.value = State.success(it.toList())
-//            }
-//        }
+        _advertiser.value = State.empty()
+
+        viewModelScope.launch {
+            advertiseRepository.data().collect {
+                _advertiser.value = State.success(it)
+            }
+        }
     }
 
     fun onAdvertiseAction(progress: Int) {
@@ -63,7 +67,7 @@ class AdvertiseViewModel @Inject constructor(
     private fun executeStartAdvertising(value: Int) {
         viewModelScope.launch {
             try {
-                repository.startAdvertising(value.toString())
+                advertiseRepository.startAdvertising(value.toString())
             } catch (e: LocationPermissionNotGrantedException) {
                 notification.value = RequestLocationPermission
             } catch (e: BluetoothPermissionNotGrantedException) {
