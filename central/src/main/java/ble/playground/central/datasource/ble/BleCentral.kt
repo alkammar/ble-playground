@@ -88,6 +88,7 @@ class BleCentral(
             timerJob = GlobalScope.launch {
                 delay(SCANNING_PERIOD)
                 scannerFlow.emit(Scanner(NotScanning))
+                bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
             }
         }
     }
@@ -118,7 +119,7 @@ class BleCentral(
                 devicesFlow.addAndEmit(
                     BleDevice(
                         macAddress = result.device.address,
-                        name = result.device.name ?: "",
+                        name = result.device.name.orEmpty(),
                         connectionState = NotConnected
                     )
                 )
@@ -128,7 +129,10 @@ class BleCentral(
         override fun onScanFailed(errorCode: Int) {
             runBlocking {
                 println("kammer error $errorCode")
-                scannerFlow.emit(Scanner(NotScanning))
+                if (errorCode != SCAN_FAILED_ALREADY_STARTED) {
+                    timerJob?.cancel()
+                    scannerFlow.emit(Scanner(NotScanning))
+                }
             }
         }
     }
