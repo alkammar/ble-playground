@@ -30,8 +30,8 @@ class BlePeripheral(
 
     private var data: String = "22"
     private var gattServerCallback: GattServerCallback? = null
-    private lateinit var gattServer: BluetoothGattServer
-    private var bluetoothDevice: BluetoothDevice? = null
+    private var gattServer: BluetoothGattServer? = null
+    private val connectedDevices = mutableMapOf<String, BluetoothDevice>()
 
     private val advertiserFlow = MutableSharedFlow<Advertiser>(replay = 1)
 
@@ -113,9 +113,10 @@ class BlePeripheral(
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
             if (status == GATT_SUCCESS && newState == STATE_CONNECTED) {
-                bluetoothDevice = device
+                connectedDevices[device.address] = device
                 println("kammer ??? connected to ${device.address}")
             } else {
+                connectedDevices.remove(device.address)
                 println("kammer ??? disconnected from ${device.address}")
             }
         }
@@ -135,17 +136,13 @@ class BlePeripheral(
         ) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
             println("kammer ??? onCharacteristicReadRequest from ${device?.address} characteristic ${characteristic?.uuid}")
-            gattServer.sendResponse(
+            gattServer?.sendResponse(
                 device,
                 requestId,
                 GATT_SUCCESS,
                 0,
                 data.toByteArray(Charset.forName("UTF-8"))
-            ).also {
-                if (it) {
-                    println("kammer ??? response ${"77"} sent to ${device?.address}")
-                }
-            }
+            )
         }
 
         override fun onCharacteristicWriteRequest(
@@ -175,19 +172,20 @@ class BlePeripheral(
 
     @SuppressLint("MissingPermission")
     fun updateData(data: String) {
-        println("kammer ??? updateData $data")
         this.data = data
 
         val characteristic = gattServer
-            .getService(BLE_SERVICE_UUID)
+            ?.getService(BLE_SERVICE_UUID)
             ?.getCharacteristic(BLE_CHARACTERISTIC_UUID)
         characteristic?.value = data.toByteArray(Charset.forName("UTF-8"))
 
-        gattServer.notifyCharacteristicChanged(
-            bluetoothDevice,
-            characteristic,
-            false
-        )
+        connectedDevices.forEach {
+            gattServer?.notifyCharacteristicChanged(
+                it.value,
+                characteristic,
+                false
+            )
+        }
     }
 
     private fun isBluetoothPermissionGranted() =
