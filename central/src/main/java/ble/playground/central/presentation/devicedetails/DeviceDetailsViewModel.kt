@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ble.playground.central.entity.Device
 import ble.playground.central.data.device.repository.DeviceRepository
+import ble.playground.central.data.sensor.repository.SensorRepository
+import ble.playground.central.entity.Sensor
 import ble.playground.common.presentation.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.map
@@ -14,11 +16,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DeviceDetailsViewModel @Inject constructor(
-    private val repository: DeviceRepository
+    private val deviceRepository: DeviceRepository,
+    private val sensorRepository: SensorRepository
 ) : ViewModel() {
 
     val device: LiveData<State<Device>> get() = _device
     private val _device = MutableLiveData<State<Device>>()
+
+    val sensor: LiveData<State<Sensor>> get() = _sensor
+    private val _sensor = MutableLiveData<State<Sensor>>()
 
     init {
         _device.value = State.empty()
@@ -26,35 +32,31 @@ class DeviceDetailsViewModel @Inject constructor(
 
     fun onViewCreated(deviceMacAddress: String) {
         viewModelScope.launch {
-            repository.data()
+            deviceRepository.data()
                 .map { devices -> devices.first { it.id == deviceMacAddress } }
                 .collect {
                     _device.value = State.success(it)
+                }
+        }
+
+        viewModelScope.launch {
+            sensorRepository.data()
+                .map { sensors -> sensors.firstOrNull() }
+                .collect { sensor ->
+                    sensor?.let { _sensor.value = State.success(it) }
                 }
         }
     }
 
     fun onConnectAction(deviceMacAddress: String) {
         viewModelScope.launch {
-            repository.connect(deviceMacAddress)
+            deviceRepository.connect(deviceMacAddress)
         }
     }
 
     fun onDisconnectAction(deviceMacAddress: String) {
         viewModelScope.launch {
-            repository.disconnect(deviceMacAddress)
+            deviceRepository.disconnect(deviceMacAddress)
         }
     }
-
-//    private fun executeStartScan() {
-//        viewModelScope.launch {
-//            try {
-//                repository.startScan()
-//            } catch (e: LocationPermissionNotGrantedException) {
-//                notification.value = Notification.RequestLocationPermission
-//            } catch (e: BluetoothPermissionNotGrantedException) {
-//                notification.value = Notification.RequestBluetoothPermission
-//            }
-//        }
-//    }
 }

@@ -12,6 +12,7 @@ import androidx.navigation.fragment.navArgs
 import ble.playground.central.R
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
+import ble.playground.central.entity.Sensor
 import ble.playground.central.presentation.devicedetails.DeviceDetailsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -55,8 +56,16 @@ class DeviceDetailsFragment : Fragment() {
                     Disconnecting -> "disconnecting ..."
                     NotConnected -> "not connected"
                 }
-                value.text = "--"
                 connect.updateState(device)
+            }
+        }
+
+        viewModel.sensor.observe(viewLifecycleOwner) { state ->
+            state.data?.let { sensor ->
+                value.text = when(sensor) {
+                    is Sensor.Available -> sensor.data
+                    is Sensor.NotAvailable -> "--"
+                }
             }
         }
     }

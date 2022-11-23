@@ -19,12 +19,13 @@ import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.app.ActivityCompat.checkSelfPermission
-import ble.playground.central.data.device.model.BleDevice
+import ble.playground.central.datasource.ble.model.BleDevice
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
 import ble.playground.central.entity.Scanner
 import ble.playground.central.entity.ScanningState.NotScanning
 import ble.playground.central.entity.ScanningState.Scanning
+import ble.playground.central.entity.Sensor
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.common.data.DeviceNotFoundException
 import ble.playground.common.data.LocationPermissionNotGrantedException
@@ -52,6 +53,7 @@ class BleCentral(
 
     private val scannerFlow = MutableSharedFlow<Scanner>(replay = 1)
     private val devicesFlow = MutableSharedFlow<Set<BleDevice>>(replay = 1)
+    private val sensorsFlow = MutableSharedFlow<Set<Sensor>>(replay = 1)
 
     private var timerJob: Job? = null
 
@@ -59,6 +61,7 @@ class BleCentral(
         GlobalScope.launch {
             scannerFlow.emit(Scanner(NotScanning))
             devicesFlow.emit(emptySet())
+            sensorsFlow.emit(emptySet())
         }
     }
 
@@ -73,6 +76,8 @@ class BleCentral(
             )
         }.toSet()
     }
+
+    fun sensorsFlow() = sensorsFlow
 
     @SuppressLint("MissingPermission")
     suspend fun startScan() {
@@ -192,7 +197,7 @@ class BleCentral(
                         gatt?.getService(UUID.fromString(SERVICE_UUID))
                             ?.getCharacteristic(UUID.fromString(VALUE_UUID))?.let {
                                 println("kammer ??? characteristic ${it.uuid} from ${bleDevice.macAddress}")
-                                requestNotification(gatt, it)
+//                                requestNotification(gatt, it)
                                 if (!readCharacteristic(gatt, it)) {
                                     Log.w(TAG, "Unable to read characteristic ${it.uuid}")
                                 }
@@ -208,18 +213,36 @@ class BleCentral(
                     characteristic: BluetoothGattCharacteristic?,
                     status: Int
                 ) {
-                    println("kammer ??? characteristic ${characteristic?.uuid} " +
-                            "value ${characteristic?.value?.let { String(it) }}")
+                    runBlocking {
+                        characteristic?.let { characteristic ->
+                            characteristic.value?.let { value ->
+                                sensorsFlow.updateAndEmit(
+                                    Sensor.Available(
+                                        characteristic.uuid.toString(),
+                                        String(value)
+                                    )
+                                )
+                            } ?: sensorsFlow.updateAndEmit(
+                                Sensor.NotAvailable(
+                                    characteristic.uuid.toString()
+                                )
+                            )
+                        }
+                    }
+                    println(
+                        "kammer ??? characteristic ${characteristic?.uuid} " +
+                                "value ${characteristic?.value?.let { String(it) }}"
+                    )
                 }
 
-                override fun onCharacteristicRead(
-                    gatt: BluetoothGatt,
-                    characteristic: BluetoothGattCharacteristic,
-                    value: ByteArray,
-                    status: Int
-                ) {
-                    println("kammer ??? characteristic ${characteristic.uuid} value ${String(value)}")
-                }
+//                override fun onCharacteristicRead(
+//                    gatt: BluetoothGatt,
+//                    characteristic: BluetoothGattCharacteristic,
+//                    value: ByteArray,
+//                    status: Int
+//                ) {
+//                    println("kammer ??? characteristic ${characteristic.uuid} value ${String(value)}")
+//                }
             }, TRANSPORT_LE)
 
     @SuppressLint("MissingPermission")
@@ -231,7 +254,10 @@ class BleCentral(
         if (gatt.setCharacteristicNotification(characteristic, true)) {
             descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
             if (!gatt.writeDescriptor(descriptor)) {
-                Log.e(TAG, "Failed to write characteristic to enable notification ${characteristic.uuid}")
+                Log.e(
+                    TAG,
+                    "Failed to write characteristic to enable notification ${characteristic.uuid}"
+                )
             }
         } else {
             Log.e(TAG, "Failed to request characteristic notification ${characteristic.uuid}")
@@ -294,9 +320,21 @@ class BleCentral(
         }
     }
 
+    private suspend fun Flow<Set<Sensor>>.updateAndEmit(sensor: Sensor) {
+        with(first().toMutableSet()) {
+            replace(sensor)
+            sensorsFlow.emit(this)
+        }
+    }
+
     private fun MutableSet<BleDevice>.replace(bleDevice: BleDevice) {
         removeIf { it.macAddress == bleDevice.macAddress }
         add(bleDevice)
+    }
+
+    private fun MutableSet<Sensor>.replace(sensor: Sensor) {
+        removeIf { it.id == sensor.id }
+        add(sensor)
     }
 
     private fun BluetoothGattCharacteristic.isReadable(): Boolean = containsProperty(PROPERTY_READ)

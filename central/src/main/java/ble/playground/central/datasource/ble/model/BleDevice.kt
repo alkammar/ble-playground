@@ -1,4 +1,4 @@
-package ble.playground.central.data.device.model
+package ble.playground.central.datasource.ble.model
 
 import android.bluetooth.BluetoothGatt
 import ble.playground.central.entity.ConnectionState
