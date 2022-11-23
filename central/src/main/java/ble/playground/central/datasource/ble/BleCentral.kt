@@ -73,7 +73,7 @@ class BleCentral(
     suspend fun startScan() {
         if (!isLocationPermissionGranted()) {
             throw LocationPermissionNotGrantedException()
-        } else if (!isBluetoothPermissionGranted()) {
+        } else if (!isScanBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
             scannerFlow.emit(Scanner(Scanning(Calendar.getInstance().timeInMillis + SCANNING_PERIOD)))
@@ -101,7 +101,7 @@ class BleCentral(
     suspend fun stopScan() {
         if (!isLocationPermissionGranted()) {
             throw LocationPermissionNotGrantedException()
-        } else if (!isBluetoothPermissionGranted()) {
+        } else if (!isScanBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
             timerJob?.cancel()
@@ -164,23 +164,38 @@ class BleCentral(
 
     @SuppressLint("MissingPermission")
     suspend fun disconnect(macAddress: String) {
-        with(devicesFlow.first().toMutableSet()) {
-            firstOrNull { it.macAddress == macAddress }?.let { bleDevice ->
-                devicesFlow.updateAndEmit(bleDevice.copy(connectionState = Disconnecting))
-                bleDevice.gatt?.disconnect()
-                devicesFlow.updateAndEmit(bleDevice.copy(connectionState = NotConnected))
-            } ?: throw DeviceNotFoundException()
+        if (!isConnectBluetoothPermissionGranted()) {
+            throw BluetoothPermissionNotGrantedException()
+        } else {
+            with(devicesFlow.first().toMutableSet()) {
+                firstOrNull { it.macAddress == macAddress }?.let { bleDevice ->
+                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = Disconnecting))
+                    bleDevice.gatt?.disconnect()
+                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = NotConnected))
+                } ?: throw DeviceNotFoundException()
+            }
         }
     }
 
     private fun isLocationPermissionGranted() =
-        checkSelfPermission(context, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED &&
-                checkSelfPermission(context, ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            true
+        } else {
+            checkSelfPermission(context, ACCESS_FINE_LOCATION) == PERMISSION_GRANTED &&
+                    checkSelfPermission(context, ACCESS_COARSE_LOCATION) == PERMISSION_GRANTED
+        }
 
-    private fun isBluetoothPermissionGranted() =
+    private fun isScanBluetoothPermissionGranted() =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             checkSelfPermission(context, BLUETOOTH_SCAN) == PERMISSION_GRANTED
         } else {
-            checkSelfPermission(context, BLUETOOTH_ADMIN) == PERMISSION_GRANTED
+            true
+        }
+
+    private fun isConnectBluetoothPermissionGranted() =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            checkSelfPermission(context, BLUETOOTH_CONNECT) == PERMISSION_GRANTED
+        } else {
+            true
         }
 }

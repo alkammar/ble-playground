@@ -1,11 +1,13 @@
 package ble.playground.central.ui.devicedetails
 
+import android.Manifest
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
@@ -13,7 +15,9 @@ import ble.playground.central.R
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
 import ble.playground.central.entity.Sensor
+import ble.playground.central.presentation.devicedetails.DeviceDetailsCommand
 import ble.playground.central.presentation.devicedetails.DeviceDetailsViewModel
+import ble.playground.central.presentation.devicedetails.Operation
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -28,6 +32,7 @@ class DeviceDetailsFragment : Fragment() {
     private val connect: Button get() = requireView().findViewById(R.id.device_details_connect_button)
 
     private var device: Device? = null
+    private var operation: Operation? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,6 +49,19 @@ class DeviceDetailsFragment : Fragment() {
     }
 
     private fun observeViewModel() {
+
+        viewModel.notification.observe(viewLifecycleOwner) { notification ->
+            when (notification) {
+                is DeviceDetailsCommand.RequestBluetoothPermission -> {
+                    this.operation = notification.operation
+                    requestBluetoothPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.BLUETOOTH_CONNECT
+                        )
+                    )
+                }
+            }
+        }
 
         viewModel.device.observe(viewLifecycleOwner) { state ->
             state.data?.let { device ->
@@ -102,6 +120,21 @@ class DeviceDetailsFragment : Fragment() {
                     viewModel.onDisconnectAction(args.deviceMacAddress)
                 }
             }
+        }
+    }
+
+    private val requestBluetoothPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissionsMap ->
+        if (permissionsMap.all { it.value }) {
+            operation?.let { operation ->
+                device?.let { device ->
+                    viewModel.onBluetoothScanPermissionGranted(operation, device.id)
+                    this.operation = null
+                }
+            }
+        } else {
+            viewModel.onBluetoothScanPermissionDenied()
         }
     }
 }

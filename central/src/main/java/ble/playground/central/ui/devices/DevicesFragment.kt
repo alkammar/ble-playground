@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.whenResumed
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -92,7 +93,7 @@ class DevicesFragment : Fragment() {
                         timerJob = startTimer(scanner.scanningState.expiresAtMillisecond)
                         scan.text = getString(
                             R.string.devices_stop_scanning_button_label,
-                            scanner.scanningState.expiresAtMillisecond - Calendar.getInstance().timeInMillis
+                            (scanner.scanningState.expiresAtMillisecond - Calendar.getInstance().timeInMillis) / 1_000
                         )
                     }
                 }
@@ -110,10 +111,12 @@ class DevicesFragment : Fragment() {
         withContext(IO) {
             while (expiresAtMillisecond > Calendar.getInstance().timeInMillis) {
                 withContext(Main) {
-                    scan.text = getString(
-                        R.string.devices_stop_scanning_button_label,
-                        (expiresAtMillisecond - Calendar.getInstance().timeInMillis) / 1_000
-                    )
+                    whenResumed {
+                        scan.text = getString(
+                            R.string.devices_stop_scanning_button_label,
+                            (expiresAtMillisecond - Calendar.getInstance().timeInMillis) / 1_000
+                        )
+                    }
                 }
                 delay(1_000)
             }

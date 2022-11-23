@@ -8,6 +8,10 @@ import ble.playground.central.entity.Device
 import ble.playground.central.data.device.repository.DeviceRepository
 import ble.playground.central.data.sensor.repository.SensorRepository
 import ble.playground.central.entity.Sensor
+import ble.playground.central.presentation.devices.DevicesCommand
+import ble.playground.common.data.BluetoothPermissionNotGrantedException
+import ble.playground.common.data.LocationPermissionNotGrantedException
+import ble.playground.common.presentation.SingleLiveEvent
 import ble.playground.common.presentation.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.map
@@ -25,6 +29,8 @@ class DeviceDetailsViewModel @Inject constructor(
 
     val sensor: LiveData<State<Sensor>> get() = _sensor
     private val _sensor = MutableLiveData<State<Sensor>>()
+
+    val notification = SingleLiveEvent<DeviceDetailsCommand>()
 
     init {
         _device.value = State.empty()
@@ -50,13 +56,36 @@ class DeviceDetailsViewModel @Inject constructor(
 
     fun onConnectAction(deviceMacAddress: String) {
         viewModelScope.launch {
-            deviceRepository.connect(deviceMacAddress)
+            try {
+                deviceRepository.connect(deviceMacAddress)
+            } catch (e: BluetoothPermissionNotGrantedException) {
+                notification.value = DeviceDetailsCommand.RequestBluetoothPermission(Operation.CONNECT)
+            }
         }
     }
 
     fun onDisconnectAction(deviceMacAddress: String) {
         viewModelScope.launch {
-            deviceRepository.disconnect(deviceMacAddress)
+            try {
+                deviceRepository.disconnect(deviceMacAddress)
+            } catch (e: BluetoothPermissionNotGrantedException) {
+                notification.value = DeviceDetailsCommand.RequestBluetoothPermission(Operation.DISCONNECT)
+            }
         }
+    }
+
+    fun onBluetoothScanPermissionGranted(operation: Operation, deviceMacAddress: String) {
+        when(operation) {
+            Operation.CONNECT -> onConnectAction(deviceMacAddress)
+            Operation.DISCONNECT -> onDisconnectAction(deviceMacAddress)
+        }
+    }
+
+    fun onBluetoothScanPermissionDenied() {
+        // Explain to the user that the feature is unavailable because the
+        // feature requires a permission that the user has denied. At the
+        // same time, respect the user's decision. Don't link to system
+        // settings in an effort to convince the user to change their
+        // decision.
     }
 }
