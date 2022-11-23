@@ -29,7 +29,7 @@ class BlePeripheral(
 ) {
 
     private var data: String = "22"
-    private lateinit var gattServerCallback: GattServerCallback
+    private var gattServerCallback: GattServerCallback? = null
     private lateinit var gattServer: BluetoothGattServer
     private var bluetoothDevice: BluetoothDevice? = null
 
@@ -51,6 +51,7 @@ class BlePeripheral(
         if (!isBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
+            setupGattServer()
             startAdvertisingInternal()
             advertiserFlow.emit(Advertiser(Advertising))
         }
@@ -89,8 +90,6 @@ class BlePeripheral(
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             super.onStartSuccess(settingsInEffect)
             println("kammer ??? onStartSuccess")
-
-            setupGattServer()
         }
 
         override fun onStartFailure(errorCode: Int) {
@@ -101,10 +100,12 @@ class BlePeripheral(
 
     @SuppressLint("MissingPermission")
     private fun setupGattServer() {
-        gattServerCallback = GattServerCallback()
+        if (gattServerCallback == null) {
+            gattServerCallback = GattServerCallback()
 
-        gattServer = bluetoothManager.openGattServer(context, gattServerCallback).apply {
-            addService(ServiceProfile.createBleService())
+            gattServer = bluetoothManager.openGattServer(context, gattServerCallback).apply {
+                addService(ServiceProfile.createBleService())
+            }
         }
     }
 
