@@ -8,7 +8,11 @@ class AdvertiseRepositoryImpl(
 
     override fun data() = blePeripheral.advertiserFlow()
 
-    override suspend fun startAdvertising(data: String) {
-        blePeripheral.startAdvertising(data)
+    override suspend fun startAdvertising() {
+        blePeripheral.startAdvertising()
+    }
+
+    override fun updateData(data: String) {
+        blePeripheral.updateData(data)
     }
 }

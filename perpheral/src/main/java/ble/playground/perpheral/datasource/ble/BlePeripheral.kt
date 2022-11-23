@@ -40,18 +40,18 @@ class BlePeripheral(
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager)
     }
 
-    suspend fun startAdvertising(data: String) {
+    suspend fun startAdvertising() {
         if (!isBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
             advertiserFlow.emit(Advertiser(NotAdvertising))
-            startAdvertisingInternal(data)
+            startAdvertisingInternal()
             advertiserFlow.emit(Advertiser(Advertising))
         }
     }
 
     @SuppressLint("MissingPermission")
-    private fun startAdvertisingInternal(data: String) {
+    private fun startAdvertisingInternal() {
         val advertiseSettings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
@@ -175,6 +175,12 @@ class BlePeripheral(
         ) {
             println("kammer ??? onCharacteristicWriteRequest from ${device?.address} characteristic ${descriptor?.uuid}")
         }
+    }
+
+    fun updateData(data: String) {
+        println("kammer ??? updateData $data")
+        this.data = data
+//        gattServer.notifyCharacteristicChanged(bluetoothDevice)
     }
 
     private fun isBluetoothPermissionGranted() =

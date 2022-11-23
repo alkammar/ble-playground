@@ -37,11 +37,11 @@ class AdvertiseViewModel @Inject constructor(
     }
 
     fun onAdvertiseAction(progress: Int) {
-        executeStartAdvertising(progress)
+        executeStartAdvertising()
     }
 
     fun onLocationPermissionGranted(progress: Int) {
-        executeStartAdvertising(progress)
+        executeStartAdvertising()
     }
 
     fun onLocationPermissionDenied() {
@@ -53,7 +53,7 @@ class AdvertiseViewModel @Inject constructor(
     }
 
     fun onBluetoothAdvertisePermissionGranted(progress: Int) {
-        executeStartAdvertising(progress)
+        executeStartAdvertising()
     }
 
     fun onBluetoothAdvertisePermissionDenied() {
@@ -64,15 +64,21 @@ class AdvertiseViewModel @Inject constructor(
         // decision.
     }
 
-    private fun executeStartAdvertising(value: Int) {
+    private fun executeStartAdvertising() {
         viewModelScope.launch {
             try {
-                advertiseRepository.startAdvertising(value.toString())
+                advertiseRepository.startAdvertising()
             } catch (e: LocationPermissionNotGrantedException) {
                 notification.value = RequestLocationPermission
             } catch (e: BluetoothPermissionNotGrantedException) {
                 notification.value = RequestBluetoothPermission
             }
+        }
+    }
+
+    fun onUpdateValue(progress: Int) {
+        viewModelScope.launch {
+            advertiseRepository.updateData(progress.toString())
         }
     }
 }

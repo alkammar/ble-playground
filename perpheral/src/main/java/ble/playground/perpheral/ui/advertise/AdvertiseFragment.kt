@@ -81,7 +81,7 @@ class AdvertiseFragment : Fragment() {
 
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 value.text = progress.toString()
-//                viewModel.onAdvertiseAction(progress)
+                viewModel.onUpdateValue(progress)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
