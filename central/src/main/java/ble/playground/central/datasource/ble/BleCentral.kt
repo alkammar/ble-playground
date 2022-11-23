@@ -95,7 +95,7 @@ class BleCentral(
 
     private fun buildScanFilter() = listOf(
         ScanFilter.Builder()
-            .setServiceData(ParcelUuid(UUID.fromString(SERVICE_UUID)), byteArrayOf())
+            .setServiceUuid(ParcelUuid(UUID.fromString(SERVICE_UUID)))
             .build()
     )
 
