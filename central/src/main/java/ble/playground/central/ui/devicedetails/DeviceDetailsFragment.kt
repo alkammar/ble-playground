@@ -1,6 +1,7 @@
 package ble.playground.central.ui.devicedetails
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,16 +9,19 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat.startForegroundService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.navArgs
 import ble.playground.central.R
+import ble.playground.central.entity.ConnectionState
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
 import ble.playground.central.entity.Sensor
 import ble.playground.central.presentation.devicedetails.DeviceDetailsCommand
 import ble.playground.central.presentation.devicedetails.DeviceDetailsViewModel
 import ble.playground.central.presentation.devicedetails.Operation
+import ble.playground.central.ui.BleBackgroundService
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -68,13 +72,11 @@ class DeviceDetailsFragment : Fragment() {
                 this.device = device
                 activity?.title = device.name.ifEmpty { device.id }
                 macAddress.text = device.id
-                connectionState.text = when (device.connectionState) {
-                    Connected -> "connected"
-                    Connecting -> "connecting ..."
-                    Disconnecting -> "disconnecting ..."
-                    NotConnected -> "not connected"
+                device.connectionState.apply {
+                    updateConnectionStateLabel()
+                    updateConnectButton()
+                    updateBackgroundService()
                 }
-                connect.updateState(device)
             }
         }
 
@@ -88,9 +90,43 @@ class DeviceDetailsFragment : Fragment() {
         }
     }
 
-    private fun Button.updateState(device: Device) {
-        apply {
-            when (device.connectionState) {
+    private fun ConnectionState.updateConnectionStateLabel() {
+        connectionState.text = when (this) {
+            Connected -> "connected"
+            Connecting -> "connecting ..."
+            Disconnecting -> "disconnecting ..."
+            NotConnected -> "not connected"
+        }
+    }
+
+    private fun ConnectionState.updateBackgroundService() {
+        when (this) {
+            Connected -> {
+                context?.let { context ->
+                    startForegroundService(
+                        context,
+                        Intent(context, BleBackgroundService::class.java)
+                    )
+                }
+            }
+            Connecting -> Unit
+            Disconnecting -> Unit
+            NotConnected -> {
+                context?.let { context ->
+                    context.stopService(
+                        Intent(
+                            context,
+                            BleBackgroundService::class.java
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun ConnectionState.updateConnectButton() {
+        connect.apply {
+            when (this@updateConnectButton) {
                 Connected -> {
                     text = getString(R.string.device_details_disconnect_button_label)
                     isEnabled = true
