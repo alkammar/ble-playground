@@ -26,13 +26,11 @@ import ble.playground.central.entity.ScanningState.Scanning
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.common.data.DeviceNotFoundException
 import ble.playground.common.data.LocationPermissionNotGrantedException
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.util.*
 
 
@@ -40,16 +38,19 @@ private const val SERVICE_UUID = "00001805-0000-1000-8000-00805f9b34fb"
 private const val VALUE_UUID = "00002a2b-0000-1000-8000-00805f9b34fb"
 private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
 
+private const val SCANNING_PERIOD = 60_000L
+
 class BleCentral(
     private val context: Context
 ) {
-
     private val bluetoothAdapter by lazy {
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
     }
 
     private val scannerFlow = MutableSharedFlow<Scanner>(replay = 1)
     private val devicesFlow = MutableSharedFlow<Set<BleDevice>>(replay = 1)
+
+    private var timerJob: Job? = null
 
     init {
         GlobalScope.launch {
@@ -77,12 +78,17 @@ class BleCentral(
         } else if (!isBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
-            scannerFlow.emit(Scanner(Scanning(60)))
+            scannerFlow.emit(Scanner(Scanning(Calendar.getInstance().timeInMillis + SCANNING_PERIOD)))
             bluetoothAdapter.bluetoothLeScanner.startScan(
                 buildScanFilter(),
                 ScanSettings.Builder().build(),
                 scanCallback
             )
+
+            timerJob = GlobalScope.launch {
+                delay(SCANNING_PERIOD)
+                scannerFlow.emit(Scanner(NotScanning))
+            }
         }
     }
 
@@ -99,6 +105,7 @@ class BleCentral(
         } else if (!isBluetoothPermissionGranted()) {
             throw BluetoothPermissionNotGrantedException()
         } else {
+            timerJob?.cancel()
             scannerFlow.emit(Scanner(NotScanning))
             bluetoothAdapter.bluetoothLeScanner.stopScan(scanCallback)
         }
@@ -120,6 +127,7 @@ class BleCentral(
 
         override fun onScanFailed(errorCode: Int) {
             runBlocking {
+                println("kammer error $errorCode")
                 scannerFlow.emit(Scanner(NotScanning))
             }
         }

@@ -3,9 +3,9 @@
     <string name="action_settings">Settings</string>
 
     <!-- Devices fragment -->
-    <string name="devices_title">Discovered Devices</string>
+    <string name="devices_title">Scanned Devices</string>
     <string name="devices_scan_button_label">Scan</string>
-    <string name="devices_stop_scanning_button_label">Stop Scanning %1$d</string>
+    <string name="devices_stop_scanning_button_label">Stop Scanning (Expires in %1$d)</string>
 
     <!-- Device details fragment -->
     <string name="device_details_connect_button_label">Connect</string>

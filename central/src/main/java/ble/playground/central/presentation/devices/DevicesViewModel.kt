@@ -85,4 +85,10 @@ class DevicesViewModel @Inject constructor(
             }
         }
     }
+
+    fun onStopScanningAction() {
+        viewModelScope.launch {
+            scannerRepository.stopScan()
+        }
+    }
 }
