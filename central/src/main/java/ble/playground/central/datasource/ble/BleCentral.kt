@@ -2,11 +2,10 @@ package ble.playground.central.datasource.ble
 
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
+import android.bluetooth.*
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
-import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
-import android.bluetooth.BluetoothGattCallback
-import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.le.ScanCallback
@@ -36,7 +35,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
-private const val SERVICE_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456a"
+
+private const val SERVICE_UUID = "00001805-0000-1000-8000-00805f9b34fb"
+private const val VALUE_UUID = "00002a2b-0000-1000-8000-00805f9b34fb"
+private const val CCC_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb"
 
 class BleCentral(
     private val context: Context
@@ -170,20 +172,64 @@ class BleCentral(
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                    println("kammer ??? onServicesDiscovered")
                     if (status == GATT_SUCCESS) {
-                        gatt?.services?.forEach {
-                            it.characteristics.forEach {
-                                it.descriptors.forEach {
-                                    println("kammer ??? discovered ${it} from ${bleDevice.macAddress}")
+                        gatt?.getService(UUID.fromString(SERVICE_UUID))
+                            ?.getCharacteristic(UUID.fromString(VALUE_UUID))?.let {
+                                println("kammer ??? characteristic ${it.uuid} from ${bleDevice.macAddress}")
+                                val descriptor: BluetoothGattDescriptor = it.getDescriptor(UUID.fromString(CCC_DESCRIPTOR_UUID))
+                                if (gatt.setCharacteristicNotification(it, true)) {
+                                    println("kammer ??? notification set ${it.uuid}")
+                                    descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                                    if (gatt.writeDescriptor(descriptor)) {
+                                        println("kammer ??? descriptor written ${it.uuid}")
+                                    } else {
+                                        println("kammer ??? descriptor NOT written ${it.uuid}")
+                                    }
+                                } else {
+                                    println("kammer ??? notification NOT set ${it.uuid}")
                                 }
-                            }
+//                                readCharacteristic(gatt, it).also {
+//                                    if (it) {
+//                                        println("kammer ??? read request sent successfully to ${bleDevice.macAddress}")
+//                                    }
+//                                }
                         }
                     } else {
                         gatt?.disconnect()
                         println("kammer ??? no gatt from ${gatt?.device?.address}")
                     }
                 }
+
+                override fun onCharacteristicRead(
+                    gatt: BluetoothGatt,
+                    characteristic: BluetoothGattCharacteristic,
+                    value: ByteArray,
+                    status: Int
+                ) {
+                    println("kammer ??? characteristic ${characteristic.uuid} value ${value}")
+                }
             }, TRANSPORT_LE)
+
+    @SuppressLint("MissingPermission")
+    fun readCharacteristic(bluetoothGatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic?): Boolean {
+//        if (bluetoothGatt == null) {
+//            return false
+//        }
+
+        // Check if characteristic is valid
+        if (characteristic == null) {
+            return false
+        }
+
+        // Check if this characteristic actually has READ property
+        if (characteristic.properties and PROPERTY_READ == 0) {
+            return false
+        }
+
+        println("kammer ??? reading characteristic")
+        return bluetoothGatt.readCharacteristic(characteristic)
+    }
 
     @SuppressLint("MissingPermission")
     suspend fun disconnect(macAddress: String) {

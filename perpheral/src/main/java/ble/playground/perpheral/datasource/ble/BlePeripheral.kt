@@ -13,6 +13,8 @@ import android.os.Build
 import android.os.ParcelUuid
 import androidx.core.app.ActivityCompat.checkSelfPermission
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
+import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_CHARACTERISTIC_UUID
+import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_SERVICE_UUID
 import ble.playground.perpheral.entity.Advertiser
 import ble.playground.perpheral.entity.AdvertisingState.Advertising
 import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
@@ -22,17 +24,9 @@ import kotlinx.coroutines.launch
 import java.nio.charset.Charset
 import java.util.*
 
-private const val SERVICE_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456a"
-private const val CHARACTERISTIC_UUID = "ddd6c04c-3fe6-4723-b2d5-f67c4cf4456b"
-
 class BlePeripheral(
     private val context: Context
 ) {
-    private val dataCharacteristic = BluetoothGattCharacteristic(
-        UUID.fromString(CHARACTERISTIC_UUID),
-        PROPERTY_READ,
-        PERMISSION_READ
-    )
 
     private var data: String = "22"
     private lateinit var gattServerCallback: GattServerCallback
@@ -82,16 +76,12 @@ class BlePeripheral(
             .build()
 
         val advertiseData = AdvertiseData.Builder()
-//            .setIncludeDeviceName(true)
-//                .addServiceUuid(ParcelUuid(UUID.fromString(SERVICE_UUID)))
-            .addServiceData(
-                ParcelUuid(UUID.fromString(SERVICE_UUID)),
-                data.toByteArray(Charset.forName("UTF-8"))
-            )
+            .setIncludeDeviceName(true)
+            .setIncludeTxPowerLevel(false)
+            .addServiceUuid(ParcelUuid(BLE_SERVICE_UUID))
             .build()
 
         val advertiser = bluetoothManager.adapter.bluetoothLeAdvertiser
-//        advertiser.stopAdvertising(advertisingCallback)
         advertiser.startAdvertising(advertiseSettings, advertiseData, advertisingCallback)
     }
 
@@ -114,18 +104,8 @@ class BlePeripheral(
         gattServerCallback = GattServerCallback()
 
         gattServer = bluetoothManager.openGattServer(context, gattServerCallback).apply {
-            addService(setupGattService())
+            addService(ServiceProfile.createBleService())
         }
-    }
-
-    private fun setupGattService(): BluetoothGattService {
-        val service = BluetoothGattService(
-            UUID.fromString(SERVICE_UUID),
-            BluetoothGattService.SERVICE_TYPE_PRIMARY
-        )
-
-        service.addCharacteristic(dataCharacteristic)
-        return service
     }
 
     private inner class GattServerCallback : BluetoothGattServerCallback() {
@@ -196,11 +176,15 @@ class BlePeripheral(
     fun updateData(data: String) {
         println("kammer ??? updateData $data")
         this.data = data
+
+        val characteristic = gattServer
+            .getService(BLE_SERVICE_UUID)
+            ?.getCharacteristic(BLE_CHARACTERISTIC_UUID)
+        characteristic?.value = data.toByteArray(Charset.forName("UTF-8"))
+
         gattServer.notifyCharacteristicChanged(
             bluetoothDevice,
-            dataCharacteristic.apply {
-                data.toByteArray(Charset.forName("UTF-8"))
-            },
+            characteristic,
             false
         )
     }
