@@ -1,4 +1,4 @@
-package ble.playground.perpheral.entity
+package ble.playground.peripheral.entity
 
 sealed class AdvertisingState {
     object Advertising : AdvertisingState()

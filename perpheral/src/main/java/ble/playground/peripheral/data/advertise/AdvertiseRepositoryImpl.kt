@@ -1,6 +1,6 @@
-package ble.playground.perpheral.data.advertise
+package ble.playground.peripheral.data.advertise
 
-import ble.playground.perpheral.datasource.ble.BlePeripheral
+import ble.playground.peripheral.datasource.ble.BlePeripheral
 
 class AdvertiseRepositoryImpl(
     private val blePeripheral: BlePeripheral

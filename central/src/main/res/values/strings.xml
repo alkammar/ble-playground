@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BlePlayground</string>
+    <string name="app_name">BLE Central</string>
     <string name="action_settings">Settings</string>
 
     <!-- Devices fragment -->

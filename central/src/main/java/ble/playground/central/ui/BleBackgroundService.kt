@@ -33,24 +33,29 @@ class BleBackgroundService : Service() {
                     SERVICE_NOTIFICATION_ID,
                     notification()
                 )
-                scope.launch {
-                    sensorRepository.data().collect { sensors ->
-                        sensors
-                            .filterIsInstance<Sensor.Available>()
-                            .firstOrNull()
-                            ?.let { sensor ->
-                                startForeground(
-                                    SERVICE_NOTIFICATION_ID,
-                                    notification(sensor.data)
-                                )
-                            }
-                    }
-                }
+                observeSensor()
             }
         }
 
         return super.onStartCommand(intent, flags, startId)
     }
+
+    private fun observeSensor() {
+        scope.launch {
+            sensorRepository.data().collect { sensors ->
+                sensors
+                    .firstAvailable()
+                    ?.let { sensor ->
+                        startForeground(
+                            SERVICE_NOTIFICATION_ID,
+                            notification(sensor.data)
+                        )
+                    }
+            }
+        }
+    }
+
+    private fun Set<Sensor>.firstAvailable() = filterIsInstance<Sensor.Available>().firstOrNull()
 
     override fun onDestroy() {
         super.onDestroy()

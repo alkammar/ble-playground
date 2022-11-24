@@ -1,4 +1,4 @@
-package ble.playground.perpheral.ui.advertise
+package ble.playground.peripheral.ui.advertise
 
 import android.Manifest
 import android.os.Bundle
@@ -11,14 +11,13 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import ble.playground.perpheral.R
-import ble.playground.perpheral.entity.Advertiser
-import ble.playground.perpheral.entity.AdvertisingState.Advertising
-import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
-import ble.playground.perpheral.entity.ConnectionState
-import ble.playground.perpheral.presentation.advertise.AdvertiseCommand
-import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
-import ble.playground.perpheral.presentation.advertise.AdvertiseViewModel
+import ble.playground.peripheral.R
+import ble.playground.peripheral.entity.Advertiser
+import ble.playground.peripheral.entity.AdvertisingState.Advertising
+import ble.playground.peripheral.entity.AdvertisingState.NotAdvertising
+import ble.playground.peripheral.presentation.advertise.AdvertiseCommand
+import ble.playground.peripheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
+import ble.playground.peripheral.presentation.advertise.AdvertiseViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

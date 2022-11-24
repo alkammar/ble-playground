@@ -1,9 +1,9 @@
-package ble.playground.perpheral.di.advertise
+package ble.playground.peripheral.di.advertise
 
 import android.content.Context
-import ble.playground.perpheral.data.advertise.AdvertiseRepository
-import ble.playground.perpheral.data.advertise.AdvertiseRepositoryImpl
-import ble.playground.perpheral.datasource.ble.BlePeripheral
+import ble.playground.peripheral.data.advertise.AdvertiseRepository
+import ble.playground.peripheral.data.advertise.AdvertiseRepositoryImpl
+import ble.playground.peripheral.datasource.ble.BlePeripheral
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

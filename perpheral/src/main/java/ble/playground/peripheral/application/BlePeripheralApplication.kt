@@ -1,4 +1,4 @@
-package ble.playground.perpheral.application
+package ble.playground.peripheral.application
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

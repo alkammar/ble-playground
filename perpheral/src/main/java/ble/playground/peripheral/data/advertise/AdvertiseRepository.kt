@@ -1,6 +1,6 @@
-package ble.playground.perpheral.data.advertise
+package ble.playground.peripheral.data.advertise
 
-import ble.playground.perpheral.entity.Advertiser
+import ble.playground.peripheral.entity.Advertiser
 import kotlinx.coroutines.flow.Flow
 
 interface AdvertiseRepository {

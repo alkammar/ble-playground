@@ -1,4 +1,4 @@
-package ble.playground.perpheral.datasource.ble
+package ble.playground.peripheral.datasource.ble
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattCharacteristic.*

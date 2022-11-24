@@ -1,4 +1,4 @@
-package ble.playground.perpheral
+package ble.playground.peripheral
 
 import org.junit.Test
 

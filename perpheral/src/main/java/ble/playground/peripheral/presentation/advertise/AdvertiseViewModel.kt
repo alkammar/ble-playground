@@ -1,4 +1,4 @@
-package ble.playground.perpheral.presentation.advertise
+package ble.playground.peripheral.presentation.advertise
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -8,10 +8,10 @@ import ble.playground.common.data.BluetoothPermissionNotGrantedException
 import ble.playground.common.data.LocationPermissionNotGrantedException
 import ble.playground.common.presentation.SingleLiveEvent
 import ble.playground.common.presentation.State
-import ble.playground.perpheral.data.advertise.AdvertiseRepository
-import ble.playground.perpheral.entity.Advertiser
-import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
-import ble.playground.perpheral.presentation.advertise.AdvertiseCommand.RequestLocationPermission
+import ble.playground.peripheral.data.advertise.AdvertiseRepository
+import ble.playground.peripheral.entity.Advertiser
+import ble.playground.peripheral.presentation.advertise.AdvertiseCommand.RequestBluetoothPermission
+import ble.playground.peripheral.presentation.advertise.AdvertiseCommand.RequestLocationPermission
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

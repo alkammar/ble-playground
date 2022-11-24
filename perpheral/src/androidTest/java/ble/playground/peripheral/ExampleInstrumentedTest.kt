@@ -1,4 +1,4 @@
-package ble.playground.perpheral
+package ble.playground.peripheral
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

@@ -1,4 +1,4 @@
-package ble.playground.perpheral.datasource.ble
+package ble.playground.peripheral.datasource.ble
 
 import android.Manifest.permission.*
 import android.annotation.SuppressLint
@@ -17,12 +17,12 @@ import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.app.ActivityCompat.checkSelfPermission
 import ble.playground.common.data.BluetoothPermissionNotGrantedException
-import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_CHARACTERISTIC_UUID
-import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.BLE_SERVICE_UUID
-import ble.playground.perpheral.datasource.ble.ServiceProfile.Companion.CLIENT_CONFIG
-import ble.playground.perpheral.entity.Advertiser
-import ble.playground.perpheral.entity.AdvertisingState.Advertising
-import ble.playground.perpheral.entity.AdvertisingState.NotAdvertising
+import ble.playground.peripheral.datasource.ble.ServiceProfile.Companion.BLE_CHARACTERISTIC_UUID
+import ble.playground.peripheral.datasource.ble.ServiceProfile.Companion.BLE_SERVICE_UUID
+import ble.playground.peripheral.datasource.ble.ServiceProfile.Companion.CLIENT_CONFIG
+import ble.playground.peripheral.entity.Advertiser
+import ble.playground.peripheral.entity.AdvertisingState.Advertising
+import ble.playground.peripheral.entity.AdvertisingState.NotAdvertising
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch

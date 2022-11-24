@@ -1,7 +1,6 @@
-package ble.playground.perpheral.ui
+package ble.playground.peripheral.ui
 
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -9,8 +8,8 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
-import ble.playground.perpheral.R
-import ble.playground.perpheral.databinding.ActivityMainBinding
+import ble.playground.peripheral.R
+import ble.playground.peripheral.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
