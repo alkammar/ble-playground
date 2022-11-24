@@ -4,6 +4,7 @@
 
     <!-- Advertise fragment -->
     <string name="advertise_title">Advertise</string>
+    <string name="advertise_seekbar_label">Slide to send new value</string>
     <string name="advertise_not_advertising_button_label">Start Advertising</string>
     <string name="advertise_advertising_button_label">Stop Advertising</string>
 </resources>

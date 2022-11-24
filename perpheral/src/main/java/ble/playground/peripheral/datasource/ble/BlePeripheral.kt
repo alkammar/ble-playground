@@ -71,7 +71,7 @@ class BlePeripheral(
         } else {
             bluetoothManager.adapter.bluetoothLeAdvertiser.stopAdvertising(advertisingCallback)
             advertiserFlow.emit(Advertiser(NotAdvertising))
-            println("kammer ??? Not advertising")
+            Log.d(LOG_TAG, "Advertising stopped")
         }
     }
 
@@ -96,12 +96,12 @@ class BlePeripheral(
     private val advertisingCallback: AdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
             super.onStartSuccess(settingsInEffect)
-            println("kammer ??? onStartSuccess")
+            Log.d(LOG_TAG, "Advertising started successfully")
         }
 
         override fun onStartFailure(errorCode: Int) {
             super.onStartFailure(errorCode)
-            println("kammer ??? onStartFailure $errorCode")
+            Log.d(LOG_TAG, "Advertising failed")
         }
     }
 
@@ -120,17 +120,17 @@ class BlePeripheral(
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
             if (status == GATT_SUCCESS && newState == STATE_CONNECTED) {
-                println("kammer ??? connected to ${device.address}")
+                Log.d(LOG_TAG, "Connected to ${device.address}")
             } else {
                 subscribedDevices.remove(device.address)
-                println("kammer ??? disconnected from ${device.address}")
+                Log.d(LOG_TAG, "Disconnected from ${device.address}")
             }
         }
 
         override fun onNotificationSent(device: BluetoothDevice?, status: Int) {
             super.onNotificationSent(device, status)
 
-            println("kammer ??? onNotificationSent to ${device?.address}")
+            Log.d(LOG_TAG, "Notification sent to ${device?.address}")
         }
 
         @SuppressLint("MissingPermission")
@@ -141,7 +141,7 @@ class BlePeripheral(
             characteristic: BluetoothGattCharacteristic?
         ) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
-            println("kammer ??? onCharacteristicReadRequest from ${device?.address} characteristic ${characteristic?.uuid}")
+            Log.d(LOG_TAG, "Characteristic ${characteristic?.uuid} read request from ${device?.address}")
             gattServer?.sendResponse(
                 device,
                 requestId,
@@ -160,7 +160,7 @@ class BlePeripheral(
             offset: Int,
             value: ByteArray?
         ) {
-            println("kammer ??? onCharacteristicWriteRequest from ${device?.address} characteristic ${characteristic?.uuid}")
+            Log.d(LOG_TAG, "Characteristic ${characteristic?.uuid} write request from ${device?.address}")
         }
 
         @SuppressLint("MissingPermission")
