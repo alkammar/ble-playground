@@ -1,7 +1,7 @@
-package ble.playground.central.di.device
+package ble.playground.peripheral.di.datasource
 
 import android.content.Context
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.peripheral.datasource.ble.BleServer
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,6 +15,6 @@ class BleModule {
 
     @Provides
     @Singleton
-    fun provideBleCentral(@ApplicationContext applicationContext: Context) =
-        BleCentral(applicationContext)
+    fun provideBleServer(@ApplicationContext applicationContext: Context) =
+        BleServer(applicationContext)
 }

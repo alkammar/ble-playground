@@ -1,18 +1,18 @@
 package ble.playground.central.data.device.repository
 
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.central.datasource.ble.BleClient
 
 class DeviceRepositoryImpl(
-    private val bleCentral: BleCentral
+    private val bleClient: BleClient
 ) : DeviceRepository {
 
-    override suspend fun data() = bleCentral.devicesFlow()
+    override suspend fun data() = bleClient.devicesFlow()
 
     override suspend fun connect(macAddress: String) {
-        bleCentral.connect(macAddress)
+        bleClient.connect(macAddress)
     }
 
     override suspend fun disconnect(macAddress: String) {
-        bleCentral.disconnect(macAddress)
+        bleClient.disconnect(macAddress)
     }
 }

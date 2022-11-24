@@ -1,6 +1,6 @@
-package ble.playground.central.di.device
+package ble.playground.central.di.repository
 
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.central.datasource.ble.BleClient
 import ble.playground.central.data.device.repository.DeviceRepository
 import ble.playground.central.data.device.repository.DeviceRepositoryImpl
 import dagger.Module
@@ -13,6 +13,6 @@ import dagger.hilt.components.SingletonComponent
 class DeviceModule {
 
     @Provides
-    fun provideDeviceRepository(bleCentral: BleCentral): DeviceRepository =
-        DeviceRepositoryImpl(bleCentral)
+    fun provideDeviceRepository(bleClient: BleClient): DeviceRepository =
+        DeviceRepositoryImpl(bleClient)
 }

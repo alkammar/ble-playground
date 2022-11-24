@@ -1,16 +1,16 @@
 package ble.playground.central.data.scanner.repository
 
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.central.datasource.ble.BleClient
 
-class ScannerRepositoryImpl(private val bleCentral: BleCentral) : ScannerRepository {
+class ScannerRepositoryImpl(private val bleClient: BleClient) : ScannerRepository {
 
-    override fun data() = bleCentral.scannerFlow()
+    override fun data() = bleClient.scannerFlow()
 
     override suspend fun startScan() {
-        bleCentral.startScan()
+        bleClient.startScan()
     }
 
     override suspend fun stopScan() {
-        bleCentral.stopScan()
+        bleClient.stopScan()
     }
 }

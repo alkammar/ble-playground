@@ -1,6 +1,6 @@
 package ble.playground.central.di.scanner
 
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.central.datasource.ble.BleClient
 import ble.playground.central.data.scanner.repository.ScannerRepository
 import ble.playground.central.data.scanner.repository.ScannerRepositoryImpl
 import dagger.Module
@@ -13,6 +13,6 @@ import dagger.hilt.components.SingletonComponent
 class ScannerModule {
 
     @Provides
-    fun provideScannerRepository(bleCentral: BleCentral): ScannerRepository =
-        ScannerRepositoryImpl(bleCentral)
+    fun provideScannerRepository(bleClient: BleClient): ScannerRepository =
+        ScannerRepositoryImpl(bleClient)
 }

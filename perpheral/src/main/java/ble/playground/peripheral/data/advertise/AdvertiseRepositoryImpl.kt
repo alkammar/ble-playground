@@ -1,22 +1,22 @@
 package ble.playground.peripheral.data.advertise
 
-import ble.playground.peripheral.datasource.ble.BlePeripheral
+import ble.playground.peripheral.datasource.ble.BleServer
 
 class AdvertiseRepositoryImpl(
-    private val blePeripheral: BlePeripheral
+    private val bleServer: BleServer
 ) : AdvertiseRepository {
 
-    override fun data() = blePeripheral.advertiserFlow()
+    override fun data() = bleServer.advertiserFlow()
 
     override suspend fun startAdvertising() {
-        blePeripheral.startAdvertising()
+        bleServer.startAdvertising()
     }
 
     override suspend fun stopAdvertising() {
-        blePeripheral.stopAdvertising()
+        bleServer.stopAdvertising()
     }
 
     override fun updateData(data: String) {
-        blePeripheral.updateData(data)
+        bleServer.updateData(data)
     }
 }

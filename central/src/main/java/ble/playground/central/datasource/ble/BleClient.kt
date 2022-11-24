@@ -38,7 +38,7 @@ private const val SCANNING_PERIOD = 60_000L
 
 private const val LOG_TAG = "BLE Playground"
 
-class BleCentral(
+class BleClient(
     private val context: Context
 ) {
     private val bluetoothAdapter by lazy {

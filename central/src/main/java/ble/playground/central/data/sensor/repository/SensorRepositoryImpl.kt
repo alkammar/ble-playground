@@ -1,7 +1,7 @@
 package ble.playground.central.data.sensor.repository
 
-import ble.playground.central.datasource.ble.BleCentral
+import ble.playground.central.datasource.ble.BleClient
 
-class SensorRepositoryImpl(private val bleCentral: BleCentral) : SensorRepository {
-    override fun data() = bleCentral.sensorsFlow()
+class SensorRepositoryImpl(private val bleClient: BleClient) : SensorRepository {
+    override fun data() = bleClient.sensorsFlow()
 }

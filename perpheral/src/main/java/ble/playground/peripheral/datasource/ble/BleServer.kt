@@ -31,7 +31,7 @@ import java.util.*
 
 private const val LOG_TAG = "BLE Playground"
 
-class BlePeripheral(
+class BleServer(
     private val context: Context
 ) {
 
