@@ -18,9 +18,9 @@ import ble.playground.central.R
 import ble.playground.central.entity.Scanner
 import ble.playground.central.entity.ScanningState.NotScanning
 import ble.playground.central.entity.ScanningState.Scanning
-import ble.playground.central.presentation.devices.DevicesCommand.RequestBluetoothPermission
-import ble.playground.central.presentation.devices.DevicesCommand.RequestLocationPermission
-import ble.playground.central.presentation.devices.ScannerViewModel
+import ble.playground.central.presentation.scanner.ScannerCommand.RequestBluetoothPermission
+import ble.playground.central.presentation.scanner.ScannerCommand.RequestLocationPermission
+import ble.playground.central.presentation.scanner.ScannerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main

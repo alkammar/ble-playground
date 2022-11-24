@@ -1,7 +1,8 @@
-package ble.playground.central.ui.devicedetails
+package ble.playground.central.ui.device
 
 import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,22 +19,22 @@ import ble.playground.central.entity.ConnectionState
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
 import ble.playground.central.entity.Sensor
-import ble.playground.central.presentation.devicedetails.DeviceDetailsCommand
-import ble.playground.central.presentation.devicedetails.DeviceDetailsViewModel
-import ble.playground.central.presentation.devicedetails.Operation
+import ble.playground.central.presentation.device.DeviceDetailsCommand
+import ble.playground.central.presentation.device.DeviceViewModel
+import ble.playground.central.presentation.device.Operation
 import ble.playground.central.ui.BleBackgroundService
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class DeviceDetailsFragment : Fragment() {
+class DeviceFragment : Fragment() {
 
-    private val viewModel: DeviceDetailsViewModel by viewModels()
-    private val args by navArgs<DeviceDetailsFragmentArgs>()
+    private val viewModel: DeviceViewModel by viewModels()
+    private val args by navArgs<DeviceFragmentArgs>()
 
-    private val macAddress: TextView get() = requireView().findViewById(R.id.device_details_mac_address)
-    private val connectionState: TextView get() = requireView().findViewById(R.id.device_details_connection_state)
-    private val value: TextView get() = requireView().findViewById(R.id.device_details_value)
-    private val connect: Button get() = requireView().findViewById(R.id.device_details_connect_button)
+    private val macAddress: TextView get() = requireView().findViewById(R.id.device_mac_address)
+    private val connectionState: TextView get() = requireView().findViewById(R.id.device_connection_state)
+    private val value: TextView get() = requireView().findViewById(R.id.device_value)
+    private val connect: Button get() = requireView().findViewById(R.id.device_connect_button)
 
     private var device: Device? = null
     private var operation: Operation? = null
@@ -41,7 +42,7 @@ class DeviceDetailsFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_device_details, container, false)
+    ): View? = inflater.inflate(R.layout.fragment_device, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,11 +59,13 @@ class DeviceDetailsFragment : Fragment() {
             when (notification) {
                 is DeviceDetailsCommand.RequestBluetoothPermission -> {
                     this.operation = notification.operation
-                    requestBluetoothPermissionLauncher.launch(
-                        arrayOf(
-                            Manifest.permission.BLUETOOTH_CONNECT
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        requestBluetoothPermissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.BLUETOOTH_CONNECT
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
@@ -128,19 +131,19 @@ class DeviceDetailsFragment : Fragment() {
         connect.apply {
             when (this@updateConnectButton) {
                 Connected -> {
-                    text = getString(R.string.device_details_disconnect_button_label)
+                    text = getString(R.string.device_disconnect_button_label)
                     isEnabled = true
                 }
                 Connecting -> {
-                    text = getString(R.string.device_details_connecting_button_label)
+                    text = getString(R.string.device_connecting_button_label)
                     isEnabled = false
                 }
                 Disconnecting -> {
-                    text = getString(R.string.device_details_disconnecting_button_label)
+                    text = getString(R.string.device_disconnecting_button_label)
                     isEnabled = false
                 }
                 NotConnected -> {
-                    text = getString(R.string.device_details_connect_button_label)
+                    text = getString(R.string.device_connect_button_label)
                     isEnabled = true
                 }
             }

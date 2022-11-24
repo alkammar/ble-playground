@@ -16,8 +16,8 @@
     </fragment>
     <fragment
         android:id="@+id/DeviceDetailsFragment"
-        android:name="ble.playground.central.ui.devicedetails.DeviceDetailsFragment"
-        tools:layout="@layout/fragment_device_details">
+        android:name="ble.playground.central.ui.device.DeviceFragment"
+        tools:layout="@layout/fragment_device">
 
         <argument
             android:name="deviceMacAddress"

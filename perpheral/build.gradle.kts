@@ -9,7 +9,7 @@ android {
     compileSdk = 33
 
     defaultConfig {
-        applicationId = "ble.playground.perpheral"
+        applicationId = "ble.playground.peripheral"
         minSdk = 26
         targetSdk = 33
         versionCode = 1

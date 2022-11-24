@@ -2,16 +2,16 @@
     <string name="app_name">BLE Central</string>
     <string name="action_settings">Settings</string>
 
-    <!-- Devices fragment -->
+    <!-- Scanner fragment -->
     <string name="scanner_title">Scanned Devices</string>
     <string name="scanner_scan_button_label">Scan</string>
     <string name="scanner_stop_scanning_button_label">Stop Scanning (stops in %1$d)</string>
 
-    <!-- Device details fragment -->
-    <string name="device_details_connect_button_label">Connect</string>
-    <string name="device_details_disconnect_button_label">Disconnect</string>
-    <string name="device_details_connecting_button_label">Connecting</string>
-    <string name="device_details_disconnecting_button_label">Disconnecting</string>
+    <!-- Device fragment -->
+    <string name="device_connect_button_label">Connect</string>
+    <string name="device_disconnect_button_label">Disconnect</string>
+    <string name="device_connecting_button_label">Connecting</string>
+    <string name="device_disconnecting_button_label">Disconnecting</string>
 
     <string name="ble_background_service_notification_title">BLE connected</string>
     <string name="ble_background_service_notification_message_data">Data is %1$s</string>

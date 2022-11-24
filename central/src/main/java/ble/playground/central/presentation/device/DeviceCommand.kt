@@ -1,4 +1,4 @@
-package ble.playground.central.presentation.devicedetails
+package ble.playground.central.presentation.device
 
 sealed class DeviceDetailsCommand {
     data class RequestBluetoothPermission(val operation: Operation) : DeviceDetailsCommand()

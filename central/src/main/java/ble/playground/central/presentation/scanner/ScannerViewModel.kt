@@ -1,4 +1,4 @@
-package ble.playground.central.presentation.devices
+package ble.playground.central.presentation.scanner
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -28,7 +28,7 @@ class ScannerViewModel @Inject constructor(
     val devices: LiveData<State<List<Device>>> get() = _devices
     private val _devices = MutableLiveData<State<List<Device>>>()
 
-    val notification = SingleLiveEvent<DevicesCommand>()
+    val notification = SingleLiveEvent<ScannerCommand>()
 
     init {
         _devices.value = State.empty()
@@ -79,9 +79,9 @@ class ScannerViewModel @Inject constructor(
             try {
                 scannerRepository.startScan()
             } catch (e: LocationPermissionNotGrantedException) {
-                notification.value = DevicesCommand.RequestLocationPermission
+                notification.value = ScannerCommand.RequestLocationPermission
             } catch (e: BluetoothPermissionNotGrantedException) {
-                notification.value = DevicesCommand.RequestBluetoothPermission
+                notification.value = ScannerCommand.RequestBluetoothPermission
             }
         }
     }
