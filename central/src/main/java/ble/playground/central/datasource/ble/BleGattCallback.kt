@@ -12,7 +12,7 @@ import java.util.*
 
 private const val LOG_TAG = "BLE Playground"
 
-class BleGattCallback(
+abstract class BleGattCallback(
     private val bleDevice: BleDevice,
     private val devicesFlow: MutableSharedFlow<Set<BleDevice>>,
     private val sensorsFlow: MutableSharedFlow<Set<Sensor>>
@@ -104,11 +104,8 @@ class BleGattCallback(
                     Log.d(LOG_TAG, "Discovered service ${service.uuid}")
                     service.getCharacteristic(UUID.fromString(ServiceProfile.BLE_CHARACTERISTIC_UUID))
                         ?.let { characteristic ->
-                            Log.d(
-                                LOG_TAG,
-                                "Discovered characteristic ${characteristic.uuid}"
-                            )
-                            requestNotification(gatt, characteristic)
+                            Log.d(LOG_TAG, "Discovered characteristic ${characteristic.uuid}")
+                            onCharacteristicDiscovered(gatt, characteristic)
                         }
                 }
         } else {
@@ -117,24 +114,10 @@ class BleGattCallback(
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun requestNotification(
-        gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic
-    ) {
-        val descriptor: BluetoothGattDescriptor =
-            characteristic.getDescriptor(UUID.fromString(ServiceProfile.CLIENT_CONFIG))
-        if (gatt.setCharacteristicNotification(characteristic, true)) {
-            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-            if (!gatt.writeDescriptor(descriptor)) {
-                Log.e(
-                    LOG_TAG,
-                    "Failed to write characteristic to enable notification ${characteristic.uuid}"
-                )
-            }
-        } else {
-            Log.e(LOG_TAG, "Failed to request characteristic notification ${characteristic.uuid}")
-        }
-    }
+    abstract fun onCharacteristicDiscovered(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic
+    )
 
     @SuppressLint("MissingPermission")
     private fun handleConnectionStateChanged(
@@ -145,16 +128,13 @@ class BleGattCallback(
         if (status == BluetoothGatt.GATT_SUCCESS) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 runBlocking {
-                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = ConnectionState.Connected))
+                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = ConnectionState.Connected, gatt = gatt))
                 }
                 gatt?.discoverServices()
-                Log.d(
-                    LOG_TAG,
-                    "Connected to ${gatt?.device?.name} ${gatt?.device?.address}"
-                )
+                Log.d(LOG_TAG, "Connected to ${gatt?.device?.name} ${gatt?.device?.address}")
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 runBlocking {
-                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = ConnectionState.NotConnected))
+                    devicesFlow.updateAndEmit(bleDevice.copy(connectionState = ConnectionState.NotConnected, gatt = null))
                 }
                 gatt?.close()
                 Log.d(LOG_TAG, "Disconnected from ${gatt?.device?.name} ${gatt?.device?.address}")

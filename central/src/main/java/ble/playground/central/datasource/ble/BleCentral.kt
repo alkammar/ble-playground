@@ -4,6 +4,7 @@ import android.Manifest.permission.*
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -14,6 +15,9 @@ import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.core.app.ActivityCompat.checkSelfPermission
+import ble.playground.central.datasource.ble.ServiceProfile.Companion.BLE_CHARACTERISTIC_UUID
+import ble.playground.central.datasource.ble.ServiceProfile.Companion.BLE_SERVICE_UUID
+import ble.playground.central.datasource.ble.ServiceProfile.Companion.CLIENT_CONFIG
 import ble.playground.central.datasource.ble.model.BleDevice
 import ble.playground.central.entity.ConnectionState.*
 import ble.playground.central.entity.Device
@@ -93,7 +97,7 @@ class BleCentral(
 
     private fun buildScanFilter() = listOf(
         ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid(UUID.fromString(ServiceProfile.BLE_SERVICE_UUID)))
+            .setServiceUuid(ParcelUuid(UUID.fromString(BLE_SERVICE_UUID)))
             .build()
     )
 
@@ -158,9 +162,35 @@ class BleCentral(
             .connectGatt(
                 context,
                 false,
-                BleGattCallback(bleDevice, devicesFlow, sensorsFlow),
+                object : BleGattCallback(bleDevice, devicesFlow, sensorsFlow) {
+                    override fun onCharacteristicDiscovered(
+                        gatt: BluetoothGatt,
+                        characteristic: BluetoothGattCharacteristic
+                    ) {
+                        subscribeToNotification(gatt, characteristic)
+                    }
+                },
                 TRANSPORT_LE
             )
+
+    @SuppressLint("MissingPermission")
+    private fun subscribeToNotification(
+        gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic
+    ) {
+        val descriptor: BluetoothGattDescriptor =
+            characteristic.getDescriptor(UUID.fromString(CLIENT_CONFIG))
+        if (gatt.setCharacteristicNotification(characteristic, true)) {
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if (!gatt.writeDescriptor(descriptor)) {
+                Log.e(
+                    LOG_TAG,
+                    "Failed to write characteristic to enable notification ${characteristic.uuid}"
+                )
+            }
+        } else {
+            Log.e(LOG_TAG, "Failed to request characteristic notification ${characteristic.uuid}")
+        }
+    }
 
     @SuppressLint("MissingPermission")
     suspend fun disconnect(macAddress: String) {
@@ -170,12 +200,37 @@ class BleCentral(
             with(devicesFlow.first().toMutableSet()) {
                 firstOrNull { it.macAddress == macAddress }?.let { bleDevice ->
                     devicesFlow.updateAndEmit(bleDevice.copy(connectionState = Disconnecting))
+                    bleDevice.unsubscribeToNotification()
                     bleDevice.gatt?.disconnect()
                     devicesFlow.updateAndEmit(bleDevice.copy(connectionState = NotConnected))
                 } ?: throw DeviceNotFoundException()
             }
         }
     }
+
+    @SuppressLint("MissingPermission")
+    private fun BleDevice.unsubscribeToNotification() {
+        gatt?.characteristic()?.let { characteristic ->
+            val descriptor: BluetoothGattDescriptor = characteristic.getDescriptor(UUID.fromString(CLIENT_CONFIG))
+            if (gatt.setCharacteristicNotification(characteristic, true)) {
+                descriptor.value = DISABLE_NOTIFICATION_VALUE
+                if (!gatt.writeDescriptor(descriptor)) {
+                    Log.e(LOG_TAG, "Failed to write characteristic to disable notification ${characteristic.uuid}")
+                } else {
+                    Log.e(LOG_TAG, "Requested to disable notification for characteristic ${characteristic.uuid}")
+                }
+            } else {
+                Log.e(
+                    LOG_TAG,
+                    "Failed to request characteristic notification ${characteristic.uuid}"
+                )
+            }
+        }
+    }
+
+    private fun BluetoothGatt.characteristic() =
+        getService(UUID.fromString(BLE_SERVICE_UUID))
+            ?.getCharacteristic(UUID.fromString(BLE_CHARACTERISTIC_UUID))
 
     private fun isLocationPermissionGranted() =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
