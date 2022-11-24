@@ -7,11 +7,11 @@
 
     <fragment
         android:id="@+id/DevicesFragment"
-        android:name="ble.playground.central.ui.devices.DevicesFragment"
-        tools:layout="@layout/fragment_devices">
+        android:name="ble.playground.central.ui.scanner.ScannerFragment"
+        tools:layout="@layout/fragment_scanner">
 
         <action
-            android:id="@+id/action_devices_device_selected"
+            android:id="@+id/action_scanner_device_selected"
             app:destination="@id/DeviceDetailsFragment" />
     </fragment>
     <fragment

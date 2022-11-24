@@ -7,7 +7,7 @@
     android:layout_height="wrap_content">
 
     <TextView
-        android:id="@+id/devices_item_title"
+        android:id="@+id/scanner_item_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
@@ -16,13 +16,13 @@
         tools:text="Title" />
 
     <TextView
-        android:id="@+id/devices_item_subtitle"
+        android:id="@+id/scanner_item_subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="4dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/devices_item_title"
+        app:layout_constraintTop_toBottomOf="@id/scanner_item_title"
         tools:text="Subtitle" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

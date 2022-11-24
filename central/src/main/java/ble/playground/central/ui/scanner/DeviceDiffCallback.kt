@@ -1,4 +1,4 @@
-package ble.playground.central.ui.devices
+package ble.playground.central.ui.scanner
 
 import androidx.recyclerview.widget.DiffUtil
 import ble.playground.central.entity.Device

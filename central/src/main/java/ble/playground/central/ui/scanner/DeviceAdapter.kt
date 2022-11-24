@@ -1,4 +1,4 @@
-package ble.playground.central.ui.devices
+package ble.playground.central.ui.scanner
 
 import android.view.LayoutInflater
 import android.view.View
@@ -21,8 +21,8 @@ class DeviceAdapter : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
     var itemClickListener: (Device) -> Unit = {}
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val title: TextView = view.findViewById(R.id.devices_item_title)
-        val subtitle: TextView = view.findViewById(R.id.devices_item_subtitle)
+        val title: TextView = view.findViewById(R.id.scanner_item_title)
+        val subtitle: TextView = view.findViewById(R.id.scanner_item_subtitle)
 
         init {
             view.setOnClickListener {

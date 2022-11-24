@@ -1,4 +1,4 @@
-package ble.playground.central.ui.devices
+package ble.playground.central.ui.scanner
 
 import android.Manifest.permission.*
 import android.os.Bundle
@@ -20,7 +20,7 @@ import ble.playground.central.entity.ScanningState.NotScanning
 import ble.playground.central.entity.ScanningState.Scanning
 import ble.playground.central.presentation.devices.DevicesCommand.RequestBluetoothPermission
 import ble.playground.central.presentation.devices.DevicesCommand.RequestLocationPermission
-import ble.playground.central.presentation.devices.DevicesViewModel
+import ble.playground.central.presentation.devices.ScannerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
@@ -31,13 +31,13 @@ import kotlinx.coroutines.withContext
 import java.util.*
 
 @AndroidEntryPoint
-class DevicesFragment : Fragment() {
+class ScannerFragment : Fragment() {
 
     private var timerJob: Job? = null
-    private val list: RecyclerView get() = requireView().findViewById(R.id.devices_list)
-    private val scan: Button get() = requireView().findViewById(R.id.devices_scan_button)
+    private val list: RecyclerView get() = requireView().findViewById(R.id.scanner_device_list)
+    private val scan: Button get() = requireView().findViewById(R.id.scanner_scan_button)
 
-    private val viewModel: DevicesViewModel by viewModels()
+    private val viewModel: ScannerViewModel by viewModels()
     private val deviceAdapter = DeviceAdapter()
 
     private var scanner: Scanner? = null
@@ -46,12 +46,12 @@ class DevicesFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? = inflater.inflate(R.layout.fragment_devices, container, false)
+    ): View? = inflater.inflate(R.layout.fragment_scanner, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        activity?.title = getString(R.string.devices_title)
+        activity?.title = getString(R.string.scanner_title)
 
         list.layoutManager = LinearLayoutManager(context)
         list.adapter = deviceAdapter
@@ -87,12 +87,12 @@ class DevicesFragment : Fragment() {
                 timerJob?.cancel()
                 when (scanner.scanningState) {
                     NotScanning -> {
-                        scan.text = getString(R.string.devices_scan_button_label)
+                        scan.text = getString(R.string.scanner_scan_button_label)
                     }
                     is Scanning -> {
                         timerJob = startTimer(scanner.scanningState.expiresAtMillisecond)
                         scan.text = getString(
-                            R.string.devices_stop_scanning_button_label,
+                            R.string.scanner_stop_scanning_button_label,
                             (scanner.scanningState.expiresAtMillisecond - Calendar.getInstance().timeInMillis) / 1_000
                         )
                     }
@@ -113,7 +113,7 @@ class DevicesFragment : Fragment() {
                 withContext(Main) {
                     whenResumed {
                         scan.text = getString(
-                            R.string.devices_stop_scanning_button_label,
+                            R.string.scanner_stop_scanning_button_label,
                             (expiresAtMillisecond - Calendar.getInstance().timeInMillis) / 1_000
                         )
                     }
@@ -125,7 +125,7 @@ class DevicesFragment : Fragment() {
 
     private fun listenToActions() {
         deviceAdapter.itemClickListener = {
-            findNavController().navigate(DevicesFragmentDirections.actionDevicesDeviceSelected(it.id))
+            findNavController().navigate(ScannerFragmentDirections.actionScannerDeviceSelected(it.id))
         }
         scan.setOnClickListener {
             if (scanner?.scanningState is NotScanning) {

@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DevicesViewModel @Inject constructor(
+class ScannerViewModel @Inject constructor(
     private val deviceRepository: DeviceRepository,
     private val scannerRepository: ScannerRepository
 ) : ViewModel() {
