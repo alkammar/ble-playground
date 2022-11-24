@@ -61,11 +61,9 @@ class BleBackgroundService : Service() {
     private fun notification(value: String? = null) = notificationChannelBuilder()
         .setContentIntent(startIntent())
         .setSmallIcon(R.drawable.ic_ble)
-        //		.setTicker(res.getString(R.string.notification_sensing_motion))
-        //		.setWhen(System.currentTimeMillis())
         .setOngoing(true)
-        .setContentTitle("BLE connected")
-        .setContentText(value?.let { "Value is $it" } ?: "No value yet")
+        .setContentTitle(getString(R.string.ble_background_service_notification_title))
+        .setContentText(value?.let { getString(R.string.ble_background_service_notification_message_data, value) } ?: getString(R.string.ble_background_service_notification_message_no_data))
         .build()
 
     private fun notificationChannelBuilder() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
